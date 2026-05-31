@@ -7,6 +7,7 @@ import {
 import { createAuthenticatedClient } from "../auth/authenticated-client.js";
 import { fetchPendingSummary } from "../services/fetch-pending-summary.js";
 import type { BotConfig } from "./config.js";
+import { loadVotersMap } from "../voters/load-voters.js";
 import { formatPendingMessages, PENDING_MESSAGE_PARSE_MODE } from "./format-pending-messages.js";
 import {
   getLoginState,
@@ -181,7 +182,8 @@ export function createBot(config: BotConfig): Bot {
     try {
       client = await createAuthenticatedClient();
       const summary = await fetchPendingSummary(client.request);
-      const messages = formatPendingMessages(summary);
+      const votersMap = await loadVotersMap();
+      const messages = formatPendingMessages(summary, votersMap);
 
       for (const text of messages) {
         await ctx.reply(text, { parse_mode: PENDING_MESSAGE_PARSE_MODE });

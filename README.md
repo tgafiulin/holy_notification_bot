@@ -4,6 +4,8 @@ Telegram-бот для напоминаний о голосовании по з�
 
 ## Текущий этап
 
+**v3** — маппинг голосующих jEvent → Telegram (`voters.json`, см. `voters.example.json`).
+
 **v2** — Telegram-бот для админа: кнопка «Проверить голосования», вывод pending в чат.
 
 ## Требования
@@ -43,3 +45,5 @@ npm run login:headed
 Переменные окружения — см. `.env.example`.
 
 После логина сессия сохраняется в `.data/session.json`.
+
+Маппинг голосующих: скопируйте `voters.example.json` → `voters.json` и укажите Telegram username (без `@`) для каждого имени из jEvent. Пустая строка или `example_username` — как «не заполнено», ссылка не показывается.

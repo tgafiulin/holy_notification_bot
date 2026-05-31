@@ -2,6 +2,8 @@ import "dotenv/config";
 
 import { createAuthenticatedClient } from "../auth/authenticated-client.js";
 import { fetchPendingSummary } from "../services/fetch-pending-summary.js";
+import { loadVotersMap } from "../voters/load-voters.js";
+import { telegramProfileUrl } from "../voters/normalize-telegram-username.js";
 
 async function main(): Promise<void> {
   const client = await createAuthenticatedClient();
@@ -10,6 +12,7 @@ async function main(): Promise<void> {
     console.log("Fetching data...\n");
 
     const summary = await fetchPendingSummary(client.request);
+    const votersMap = await loadVotersMap();
 
     console.log(`Total speeches in response: ${summary.totalSpeechCount}`);
     console.log(
@@ -23,7 +26,11 @@ async function main(): Promise<void> {
     }
 
     for (const voter of summary.byVoter) {
-      console.log(`${voter.voterName} (${voter.pending.length}):`);
+      const username = votersMap.get(voter.voterName);
+      const tgSuffix = username
+        ? ` — ${telegramProfileUrl(username)}`
+        : "";
+      console.log(`${voter.voterName}${tgSuffix} (${voter.pending.length}):`);
       for (const item of voter.pending) {
         console.log(`  - ${item.authorNames} — ${item.speechTitle}`);
       }
