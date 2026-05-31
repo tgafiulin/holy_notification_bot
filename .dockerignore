@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.data
+voters.json
+.git
+docs
+*.log

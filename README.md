@@ -2,12 +2,6 @@
 
 Telegram-бот для напоминаний о голосовании по заявкам докладов в [jEvent CRM](https://jevent.jugru.org).
 
-## Текущий этап
-
-**v3** — маппинг голосующих jEvent → Telegram (`voters.json`, см. `voters.example.json`).
-
-**v2** — Telegram-бот для админа: кнопка «Проверить голосования», вывод pending в чат.
-
 ## Требования
 
 - Node.js 20+
@@ -46,4 +40,47 @@ npm run login:headed
 
 После логина сессия сохраняется в `.data/session.json`.
 
-Маппинг голосующих: скопируйте `voters.example.json` → `voters.json` и укажите Telegram username (без `@`) для каждого имени из jEvent. Пустая строка или `example_username` — как «не заполнено», ссылка не показывается.
+## Маппинг голосующих
+
+Скопируйте `voters.example.json` → `voters.json` и укажите Telegram username (без `@`) для каждого имени из jEvent. Попросите голосующих написать боту `/start` — `telegramUserId` привяжется автоматически.
+
+`voters.json` не коммитится в git (персональные данные).
+
+## Деплой (Docker)
+
+Prod — один контейнер на VPS (рекомендуется ≥ 2 GB RAM: Playwright + Chromium при poll/login).
+
+### Подготовка на сервере
+
+1. Клонировать репозиторий.
+2. Создать `.env` (см. `.env.example`). **Обязательно** заполнить:
+   - `JEVENT_USERNAME`, `JEVENT_PASSWORD` — автоперелогин без ручного `/login`;
+   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_USER_ID`.
+3. Создать `voters.json` рядом с `docker-compose.yml` (скопировать из `voters.example.json` и заполнить).  
+   Файл должен существовать **до** первого `docker compose up` — иначе Docker создаст каталог вместо файла.
+4. Остановить локальный бот (`npm run bot` / `bot:dev`) — один инстанс на токен.
+
+Каталог `.data/` создаётся автоматически (volume для `session.json` и будущего state планировщика).
+
+### Запуск и обновление
+
+```bash
+docker compose up -d --build
+docker compose logs -f bot
+```
+
+Обновление после `git pull`:
+
+```bash
+docker compose up -d --build
+```
+
+### Проверка после деплоя
+
+- `/start` в Telegram — бот отвечает.
+- «Проверить голосования» — приходит сводка pending.
+- «Разослать напоминания» — DM уходят голосующим с `telegramUserId`.
+- Перезапуск контейнера — `session.json` и `voters.json` на месте.
+- Удалить `.data/session.json` на хосте → следующий poll перелогинится из `.env`.
+
+Подробные чеклисты — в `docs/PROJECT.md` (локально).
