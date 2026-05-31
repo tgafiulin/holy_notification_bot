@@ -4,19 +4,17 @@ import { stdin as input, stdout as output } from "node:process";
 import "dotenv/config";
 
 import {
-  createAuthenticatedContext,
-  loginWithPlaywright,
-  verifySession,
-} from "../auth/login.js";
+  ensureJeventSession,
+  getCredentialsFromEnv,
+} from "../auth/ensure-session.js";
+import { createAuthenticatedContext, verifySession } from "../auth/login.js";
 import { JEVENT_URLS } from "../config/urls.js";
 
 async function promptCredentials(): Promise<{ username: string; password: string }> {
-  const username = process.env.JEVENT_USERNAME;
-  const password = process.env.JEVENT_PASSWORD;
-
-  if (username && password) {
+  const fromEnv = getCredentialsFromEnv();
+  if (fromEnv) {
     console.log("Using credentials from environment variables.");
-    return { username, password };
+    return fromEnv;
   }
 
   const rl = createInterface({ input, output });
@@ -38,30 +36,48 @@ async function main(): Promise<void> {
 
   console.log("jEvent login test\n");
 
-  let session = await createAuthenticatedContext({ headless });
+  const envCreds = getCredentialsFromEnv();
+  const sessionResult = await ensureJeventSession(envCreds ?? undefined, {
+    headless,
+  });
 
-  if (session) {
-    const valid = await verifySession(session.page);
-    if (valid) {
-      console.log("Existing session is valid.");
-    } else {
-      console.log("Saved session expired, logging in again...");
-      await session.browser.close();
-      session = null;
+  if (sessionResult.status === "ready") {
+    console.log("Session is ready.");
+  } else {
+    if (sessionResult.status === "failed") {
+      console.log(`Previous login failed: ${sessionResult.message}`);
     }
+
+    const credentials = await promptCredentials();
+
+    console.log("Logging in...");
+    const loginResult = await ensureJeventSession(credentials, { headless });
+
+    if (loginResult.status !== "ready") {
+      const message =
+        loginResult.status === "failed"
+          ? loginResult.message
+          : "Login failed";
+      throw new Error(message);
+    }
+
+    console.log("Login successful.");
   }
 
+  const session = await createAuthenticatedContext({ headless });
   if (!session) {
-    const credentials = await promptCredentials();
-    console.log("Logging in...");
-    session = await loginWithPlaywright(credentials, { headless });
-    console.log("Login successful.");
+    throw new Error("Session file missing after login.");
   }
 
   const { page, browser } = session;
 
   console.log(`Current URL: ${page.url()}`);
-  console.log(`Session saved to .data/session.json`);
+  console.log("Session saved to .data/session.json");
+
+  const valid = await verifySession(page);
+  if (!valid) {
+    throw new Error("Session verification failed.");
+  }
 
   const eventId = process.env.JEVENT_EVENT_ID ?? "100924";
   const pollingUrl = JEVENT_URLS.polling(eventId);

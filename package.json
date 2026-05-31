@@ -6,10 +6,13 @@
   "scripts": {
     "login": "tsx src/cli/login-test.ts",
     "login:headed": "tsx src/cli/login-test.ts --headed",
-    "poll": "tsx src/cli/poll-test.ts"
+    "poll": "tsx src/cli/poll-test.ts",
+    "bot": "tsx src/cli/bot.ts",
+    "bot:dev": "tsx watch src/cli/bot.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
+    "grammy": "^1.39.3",
     "playwright": "^1.60.0"
   },
   "devDependencies": {

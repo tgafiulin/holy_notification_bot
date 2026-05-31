@@ -2,6 +2,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from "playwrig
 
 import { JEVENT_URLS } from "../config/urls.js";
 import { saveSession } from "./session.js";
+import { isSessionValid } from "./verify-session-api.js";
 
 export type LoginCredentials = {
   username: string;
@@ -65,9 +66,7 @@ export async function createAuthenticatedContext(
   const context = await browser.newContext({ storageState: getSessionPath() });
   const page = await context.newPage();
 
-  await page.goto(JEVENT_URLS.login, { waitUntil: "domcontentloaded" });
-
-  if (page.url().includes("/login")) {
+  if (!(await isSessionValid(context.request))) {
     await browser.close();
     return null;
   }
@@ -76,6 +75,6 @@ export async function createAuthenticatedContext(
 }
 
 export async function verifySession(page: Page): Promise<boolean> {
-  await page.goto(JEVENT_URLS.login, { waitUntil: "domcontentloaded" });
-  return !page.url().includes("/login");
+  const context = page.context();
+  return isSessionValid(context.request);
 }
