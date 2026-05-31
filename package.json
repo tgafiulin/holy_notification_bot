@@ -1,0 +1,20 @@
+{
+  "name": "holy_notification_bot",
+  "version": "1.0.0",
+  "description": "Telegram bot reminders for jEvent conference talk voting",
+  "type": "module",
+  "scripts": {
+    "login": "tsx src/cli/login-test.ts",
+    "login:headed": "tsx src/cli/login-test.ts --headed",
+    "poll": "tsx src/cli/poll-test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "playwright": "^1.60.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}
