@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { createAuthenticatedClient } from "../auth/authenticated-client.js";
 import { fetchPendingSummary } from "../services/fetch-pending-summary.js";
+import { formatVotersSyncNote } from "../voters/format-voters-sync-note.js";
 import { loadVotersMap } from "../voters/load-voters.js";
 import { telegramProfileUrl } from "../voters/normalize-telegram-username.js";
 
@@ -18,7 +19,14 @@ async function main(): Promise<void> {
     console.log(
       `Eligible internal status "${summary.eligibleStatusName}" (id=${summary.eligibleStatusId}): ${summary.eligibleSpeechCount}`,
     );
-    console.log(`Pending vote assignments: ${summary.pendingCount}\n`);
+    console.log(`Pending vote assignments: ${summary.pendingCount}`);
+
+    const syncNote = formatVotersSyncNote(summary.votersAdded);
+    if (syncNote) {
+      console.log(`\n${syncNote}\n`);
+    } else {
+      console.log();
+    }
 
     if (summary.byVoter.length === 0) {
       console.log("No pending votes for eligible speeches.");

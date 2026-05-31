@@ -9,6 +9,8 @@ export const JEVENT_URLS = {
     `${JEVENT_BASE_URL}/ajax/vote/${eventId}/polling/`,
   internalStatuses: (eventId: number | string) =>
     `${JEVENT_BASE_URL}/ajax/internal-status/event/${eventId}/`,
+  pcMembers: (eventId: number | string) =>
+    `${JEVENT_BASE_URL}/ajax/vote/${eventId}/pcmembers/`,
 } as const;
 
 export const SESSION_FILE = ".data/session.json";

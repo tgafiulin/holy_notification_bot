@@ -9,8 +9,10 @@ import {
   fetchInternalStatuses,
   findInternalStatusIdByName,
 } from "../scraper/fetch-internal-statuses.js";
+import { fetchPcMembers } from "../scraper/fetch-pcmembers.js";
 import { fetchPollingData } from "../scraper/fetch-polling.js";
 import { parsePollingResponse } from "../scraper/parse-votes.js";
+import { syncVotersFromPcMembers } from "../voters/sync-voters-from-pcmembers.js";
 
 export type PendingSummary = {
   eventId: string;
@@ -20,16 +22,20 @@ export type PendingSummary = {
   eligibleSpeechCount: number;
   pendingCount: number;
   byVoter: VoterPendingSummary[];
+  votersAdded: string[];
 };
 
 export async function fetchPendingSummary(
   request: APIRequestContext,
   eventId: string = process.env.JEVENT_EVENT_ID ?? DEFAULT_EVENT_ID,
 ): Promise<PendingSummary> {
-  const [internalStatuses, pollingData] = await Promise.all([
+  const [internalStatuses, pollingData, pcMembers] = await Promise.all([
     fetchInternalStatuses(request, eventId),
     fetchPollingData(request, { eventId }),
+    fetchPcMembers(request, eventId),
   ]);
+
+  const { added: votersAdded } = await syncVotersFromPcMembers(pcMembers);
 
   const eligibleStatusId = findInternalStatusIdByName(
     internalStatuses,
@@ -55,5 +61,6 @@ export async function fetchPendingSummary(
     eligibleSpeechCount,
     pendingCount: pending.length,
     byVoter,
+    votersAdded,
   };
 }

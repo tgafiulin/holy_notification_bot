@@ -1,34 +1,51 @@
-import { readFile } from "node:fs/promises";
-
 import { VOTERS_FILE } from "../config/paths.js";
-import { isMappedTelegramUsername } from "./is-mapped-telegram-username.js";
-import { normalizeTelegramUsername } from "./normalize-telegram-username.js";
-import type { VotersFile, VotersMap } from "./types.js";
+import { parseVoterEntry } from "./parse-voter-entry.js";
+import type { VotersFile, VotersMap, VotersRegistry } from "./types.js";
+import { readVotersFile } from "./voters-file-io.js";
 
-function parseVotersFile(content: string): VotersMap {
-  const parsed = JSON.parse(content) as VotersFile;
+function parseVotersFile(parsed: VotersFile): VotersRegistry {
+  const registry: VotersRegistry = new Map();
 
-  if (!parsed.voters || typeof parsed.voters !== "object" || Array.isArray(parsed.voters)) {
-    throw new Error(
-      'voters.json: expected { "voters": { "Имя из jEvent": "telegram_username" } }',
-    );
-  }
-
-  const map: VotersMap = new Map();
-
-  for (const [jeventName, rawUsername] of Object.entries(parsed.voters)) {
+  for (const [jeventName, rawEntry] of Object.entries(parsed.voters)) {
     const name = jeventName.trim();
-    const username = normalizeTelegramUsername(String(rawUsername));
-
-    if (!name || !isMappedTelegramUsername(username)) {
+    if (!name) {
       continue;
     }
 
-    if (map.has(name)) {
+    if (registry.has(name)) {
       throw new Error(`voters.json: duplicate jEvent name "${name}"`);
     }
 
-    map.set(name, username);
+    registry.set(name, parseVoterEntry(rawEntry));
+  }
+
+  return registry;
+}
+
+async function readVotersRegistry(
+  filePath: string = VOTERS_FILE,
+): Promise<VotersRegistry> {
+  const file = await readVotersFile(filePath);
+  if (!file) {
+    return new Map();
+  }
+
+  return parseVotersFile(file);
+}
+
+export async function loadVotersRegistry(
+  filePath: string = VOTERS_FILE,
+): Promise<VotersRegistry> {
+  return readVotersRegistry(filePath);
+}
+
+export function votersRegistryToUsernameMap(registry: VotersRegistry): VotersMap {
+  const map: VotersMap = new Map();
+
+  for (const [name, record] of registry) {
+    if (record.username) {
+      map.set(name, record.username);
+    }
   }
 
   return map;
@@ -37,14 +54,6 @@ function parseVotersFile(content: string): VotersMap {
 export async function loadVotersMap(
   filePath: string = VOTERS_FILE,
 ): Promise<VotersMap> {
-  try {
-    const content = await readFile(filePath, "utf-8");
-    return parseVotersFile(content);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return new Map();
-    }
-
-    throw error;
-  }
+  const registry = await readVotersRegistry(filePath);
+  return votersRegistryToUsernameMap(registry);
 }

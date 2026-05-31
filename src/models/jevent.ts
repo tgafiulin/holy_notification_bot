@@ -67,3 +67,11 @@ export type VoterPendingSummary = {
   voterName: string;
   pending: PendingVote[];
 };
+
+export type PcMember = {
+  id: number;
+  name: string;
+  email: string;
+  canVote: boolean;
+  enabled: boolean;
+};
