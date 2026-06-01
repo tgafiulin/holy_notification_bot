@@ -1,0 +1,10 @@
+# Prod: готовый образ (собирается локально). На VPS — без --build.
+# BOT_IMAGE в .env, например holy-notification-bot:latest или ghcr.io/you/repo:latest
+services:
+  bot:
+    image: ${BOT_IMAGE:?Set BOT_IMAGE in .env (see .env.example)}
+    env_file: .env
+    volumes:
+      - ./.data:/app/.data
+      - ./voters.json:/app/voters.json
+    restart: unless-stopped

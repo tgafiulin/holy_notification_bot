@@ -8,7 +8,10 @@
     "login:headed": "tsx src/cli/login-test.ts --headed",
     "poll": "tsx src/cli/poll-test.ts",
     "bot": "tsx src/cli/bot.ts",
-    "bot:dev": "tsx watch src/cli/bot.ts"
+    "bot:dev": "tsx watch src/cli/bot.ts",
+    "docker:build": "bash scripts/docker-build-prod.sh",
+    "docker:push": "bash scripts/docker-push-prod.sh",
+    "docker:save": "bash scripts/docker-save-prod.sh"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

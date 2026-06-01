@@ -1,5 +1,8 @@
+# Локальная сборка и тест Docker (docker compose up --build).
+# Prod на VPS с 2 GB RAM — docker-compose.prod.yml + образ, собранный локально (см. README).
 services:
   bot:
+    image: holy-notification-bot:local
     build: .
     env_file: .env
     volumes:

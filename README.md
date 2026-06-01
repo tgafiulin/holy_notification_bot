@@ -48,32 +48,82 @@ npm run login:headed
 
 ## Деплой (Docker)
 
-Prod — один контейнер на VPS (рекомендуется ≥ 2 GB RAM: Playwright + Chromium при poll/login).
+Prod — один контейнер на VPS. **Рекомендуется ≥ 2 GB RAM** (Chromium при poll/login). Образ **собирается на вашем ПК**, на VPS только запуск — так не нужны гигабайты RAM под `docker compose build`.
 
-### Подготовка на сервере
+### 1. Сборка образа локально
 
-1. Клонировать репозиторий.
-2. Создать `.env` (см. `.env.example`). **Обязательно** заполнить:
-   - `JEVENT_USERNAME`, `JEVENT_PASSWORD` — автоперелогин без ручного `/login`;
-   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_USER_ID`.
-3. Создать `voters.json` рядом с `docker-compose.yml` (скопировать из `voters.example.json` и заполнить).  
-   Файл должен существовать **до** первого `docker compose up` — иначе Docker создаст каталог вместо файла.
-4. Остановить локальный бот (`npm run bot` / `bot:dev`) — один инстанс на токен.
+Нужны [Docker Desktop](https://www.docker.com/products/docker-desktop/) (или Docker Engine). Сборка под Linux VPS:
 
-Каталог `.data/` создаётся автоматически (volume для `session.json` и будущего state планировщика).
+```bash
+# тег по умолчанию: holy-notification-bot:latest
+npm run docker:build
 
-### Запуск и обновление
+# свой тег (registry)
+set BOT_IMAGE=ghcr.io/YOUR_USER/holy-notification-bot:latest   # Windows cmd
+export BOT_IMAGE=ghcr.io/YOUR_USER/holy-notification-bot:latest  # bash
+npm run docker:build
+```
+
+Локальная проверка (сборка на машине):
 
 ```bash
 docker compose up -d --build
 docker compose logs -f bot
 ```
 
-Обновление после `git pull`:
+### 2. Доставка образа на VPS
+
+**Вариант A — registry (удобнее для обновлений)**
 
 ```bash
-docker compose up -d --build
+docker login ghcr.io   # или hub.docker.com
+npm run docker:push
 ```
+
+**Вариант B — без registry (`docker save` / `scp`)**
+
+```bash
+npm run docker:save
+scp bot-image.tar.gz user@your-vps:/tmp/
+ssh user@your-vps "docker load -i /tmp/bot-image.tar.gz"
+```
+
+### 3. Подготовка на сервере
+
+Минимум файлов в одной папке (можно `git clone` без сборки):
+
+- `docker-compose.prod.yml`
+- `.env` (см. `.env.example`) — **обязательно**:
+  - `JEVENT_USERNAME`, `JEVENT_PASSWORD`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_USER_ID`
+  - `BOT_IMAGE` — тот же тег, что при сборке (например `holy-notification-bot:latest` или `ghcr.io/...`)
+- `voters.json` — **до** первого `up`, иначе Docker создаст каталог вместо файла
+
+Остановить локальный бот (`npm run bot` / `bot:dev`) — один инстанс на токен.
+
+Каталог `.data/` создаётся автоматически (volume для `session.json`).
+
+### 4. Запуск и обновление на VPS
+
+Первый запуск (вариант A — pull из registry):
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml logs -f bot
+```
+
+Вариант B — после `docker load` на сервере:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Обновление версии бота:
+
+1. Локально: `npm run docker:build` → `npm run docker:push` (или `docker:save` + `scp` + `docker load`).
+2. На VPS: `docker compose -f docker-compose.prod.yml pull` (или load) → `docker compose -f docker-compose.prod.yml up -d`.
+
+На VPS **не** используйте `docker compose up --build` — сборка не нужна.
 
 ### Проверка после деплоя
 
