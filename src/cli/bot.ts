@@ -2,13 +2,12 @@ import "dotenv/config";
 
 import { createBot } from "../bot/bot.js";
 import { loadBotConfig } from "../bot/config.js";
+import { startBotWithReminders } from "../bot/start-bot.js";
 
 async function main(): Promise<void> {
   const config = loadBotConfig();
   const bot = createBot(config);
-
-  console.log(`Bot started (admin user id: ${config.adminUserId})`);
-  await bot.start();
+  await startBotWithReminders(bot, config);
 }
 
 main().catch((error: unknown) => {

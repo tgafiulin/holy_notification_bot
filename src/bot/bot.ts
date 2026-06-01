@@ -4,8 +4,8 @@ import {
   ensureJeventSession,
   getCredentialsFromEnv,
 } from "../auth/ensure-session.js";
-import { createAuthenticatedClient } from "../auth/authenticated-client.js";
-import { fetchPendingSummary } from "../services/fetch-pending-summary.js";
+import { fetchPendingWithSession as fetchPendingFromService } from "../services/fetch-pending-with-session.js";
+import type { PendingSummary } from "../services/fetch-pending-summary.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
 import type { BotConfig } from "./config.js";
 import { bindTelegramUserId } from "../voters/bind-telegram-user-id.js";
@@ -79,37 +79,26 @@ async function promptLogin(ctx: { reply: (text: string) => Promise<unknown> }): 
 }
 
 async function fetchPendingWithSession(): Promise<
-  | {
-      ok: true;
-      summary: Awaited<ReturnType<typeof fetchPendingSummary>>;
-    }
+  | { ok: true; summary: PendingSummary }
   | { ok: false; needsPrompt: true }
   | { ok: false; needsPrompt: false; message: string }
   | { ok: false; error: string }
 > {
-  const session = await ensureSessionForBot();
-  if (!session.ok) {
-    return session;
+  const result = await fetchPendingFromService();
+
+  if (result.ok) {
+    return { ok: true, summary: result.summary };
   }
 
-  let client: Awaited<ReturnType<typeof createAuthenticatedClient>> | undefined;
-
-  try {
-    client = await createAuthenticatedClient();
-    const summary = await fetchPendingSummary(client.request);
-    return { ok: true, summary };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Неизвестная ошибка";
-
-    if (message.includes("No saved session")) {
-      return { ok: false, needsPrompt: true };
-    }
-
-    return { ok: false, error: message };
-  } finally {
-    await client?.dispose();
+  if (result.kind === "needs_credentials") {
+    return { ok: false, needsPrompt: true };
   }
+
+  if (result.kind === "session_failed") {
+    return { ok: false, needsPrompt: false, message: result.message };
+  }
+
+  return { ok: false, error: result.message };
 }
 
 async function replySessionError(

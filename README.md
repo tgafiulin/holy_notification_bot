@@ -28,6 +28,9 @@ npm run bot
 
 # То же с автоперезапуском при изменениях в src/
 npm run bot:dev
+
+# Один прогон планировщика (как в Docker hourly; слоты — REMINDER_* в .env)
+npm run reminder-once
 ```
 
 С видимым браузером (отладка логина):
@@ -85,7 +88,9 @@ ssh USER@VPS "docker load -i /tmp/bot-image.tar.gz"
 
 Остановить локальный бот (`npm run bot` / `bot:dev`) — один инстанс на токен.
 
-Каталог `.data/` создаётся автоматически (volume для `session.json`).
+Каталог `.data/` создаётся автоматически (volume для `session.json`, `reminder-state.json`).
+
+В Docker-образе фоном раз в час вызывается `npm run reminder-once` (расписание `REMINDER_SLOTS`, см. `.env.example`). При старте бота админу сообщают о пропущенных слотах, если бот лежал во время рассылки.
 
 ### 4. Первый запуск на VPS
 
@@ -125,5 +130,7 @@ docker compose -f docker-compose.prod.yml up -d
 - «Разослать напоминания» — DM уходят голосующим с `telegramUserId`.
 - Перезапуск контейнера — `session.json` и `voters.json` на месте.
 - Удалить `.data/session.json` на хосте → следующий poll перелогинится из `.env`.
+- В `.env` на VPS: `REMINDER_TIMEZONE`, `REMINDER_SLOTS` (по умолчанию вс 16:00 / вт 13:00 / чт 16:00 MSK).
+- После деплоя с планировщиком: дождаться слота или один раз `docker compose exec bot npm run reminder-once` для проверки (осторожно: реальные DM).
 
 Подробные чеклисты — в `docs/PROJECT.md` (локально).

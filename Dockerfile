@@ -10,5 +10,8 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
+COPY scripts/docker-entrypoint.sh /entrypoint.sh
 
-CMD ["npm", "run", "bot"]
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

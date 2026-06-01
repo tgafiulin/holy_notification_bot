@@ -9,6 +9,7 @@
     "poll": "tsx src/cli/poll-test.ts",
     "bot": "tsx src/cli/bot.ts",
     "bot:dev": "tsx watch src/cli/bot.ts",
+    "reminder-once": "tsx src/cli/reminder-once.ts",
     "docker:build": "bash scripts/docker-build-prod.sh",
     "docker:push": "bash scripts/docker-push-prod.sh",
     "docker:save": "bash scripts/docker-save-prod.sh"
