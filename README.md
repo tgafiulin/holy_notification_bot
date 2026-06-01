@@ -55,12 +55,6 @@ Prod — один контейнер на VPS. **Рекомендуется ≥ 
 Нужны [Docker Desktop](https://www.docker.com/products/docker-desktop/) (или Docker Engine). Сборка под Linux VPS:
 
 ```bash
-# тег по умолчанию: holy-notification-bot:latest
-npm run docker:build
-
-# свой тег (registry)
-set BOT_IMAGE=ghcr.io/YOUR_USER/holy-notification-bot:latest   # Windows cmd
-export BOT_IMAGE=ghcr.io/YOUR_USER/holy-notification-bot:latest  # bash
 npm run docker:build
 ```
 
@@ -73,19 +67,10 @@ docker compose logs -f bot
 
 ### 2. Доставка образа на VPS
 
-**Вариант A — registry (удобнее для обновлений)**
-
-```bash
-docker login ghcr.io   # или hub.docker.com
-npm run docker:push
-```
-
-**Вариант B — без registry (`docker save` / `scp`)**
-
 ```bash
 npm run docker:save
-scp bot-image.tar.gz user@your-vps:/tmp/
-ssh user@your-vps "docker load -i /tmp/bot-image.tar.gz"
+scp bot-image.tar.gz USER@VPS:/tmp/
+ssh USER@VPS "docker load -i /tmp/bot-image.tar.gz"
 ```
 
 ### 3. Подготовка на сервере
@@ -95,35 +80,43 @@ ssh user@your-vps "docker load -i /tmp/bot-image.tar.gz"
 - `docker-compose.prod.yml`
 - `.env` (см. `.env.example`) — **обязательно**:
   - `JEVENT_USERNAME`, `JEVENT_PASSWORD`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_USER_ID`
-  - `BOT_IMAGE` — тот же тег, что при сборке (например `holy-notification-bot:latest` или `ghcr.io/...`)
+  - `BOT_IMAGE=holy-notification-bot:latest`
 - `voters.json` — **до** первого `up`, иначе Docker создаст каталог вместо файла
 
 Остановить локальный бот (`npm run bot` / `bot:dev`) — один инстанс на токен.
 
 Каталог `.data/` создаётся автоматически (volume для `session.json`).
 
-### 4. Запуск и обновление на VPS
+### 4. Первый запуск на VPS
 
-Первый запуск (вариант A — pull из registry):
-
-```bash
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml logs -f bot
-```
-
-Вариант B — после `docker load` на сервере:
+В `~/holy-notification-bot` после `docker load`:
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Обновление версии бота:
+На VPS **не** используйте `docker compose up --build`.
 
-1. Локально: `npm run docker:build` → `npm run docker:push` (или `docker:save` + `scp` + `docker load`).
-2. На VPS: `docker compose -f docker-compose.prod.yml pull` (или load) → `docker compose -f docker-compose.prod.yml up -d`.
+### 5. Обновление
 
-На VPS **не** используйте `docker compose up --build` — сборка не нужна.
+Локальный `npm run bot` выключен. `.env` / `voters.json` / `.data` на сервере не трогаем, если не менялись.
+
+**ПК:**
+
+```bash
+npm run docker:build
+npm run docker:save
+scp bot-image.tar.gz USER@VPS:/tmp/
+```
+
+**VPS:**
+
+```bash
+ssh root@IP
+docker load -i /tmp/bot-image.tar.gz
+cd ~/holy-notification-bot
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ### Проверка после деплоя
 
