@@ -57,3 +57,25 @@ export function filterStalledPending(
 }
 
 export const STALL_SKIP_REASON = "ниже порога застоя";
+
+export function splitPendingByStall(
+  pending: PendingVote[],
+  config: StallConfig,
+  firstSeenMap: SpeechFirstSeenMap,
+  now: Date,
+): { stalled: PendingVote[]; recent: PendingVote[]; firstSeenMap: SpeechFirstSeenMap } {
+  if (isStallThresholdDisabled(config)) {
+    return { stalled: [...pending], recent: [], firstSeenMap };
+  }
+
+  const { stalled, firstSeenMap: map } = filterStalledPending(
+    pending,
+    config,
+    firstSeenMap,
+    now,
+  );
+  const stalledIds = new Set(stalled.map((v) => v.speechId));
+  const recent = pending.filter((v) => !stalledIds.has(v.speechId));
+
+  return { stalled, recent, firstSeenMap: map };
+}

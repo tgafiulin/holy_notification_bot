@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, type Api } from "grammy";
 
 import {
   ensureJeventSession,
@@ -23,7 +23,20 @@ import {
   formatAdminBindNote,
   formatVoterStartMessage,
 } from "./format-voter-start-message.js";
+import { handleMyApplications } from "./handle-my-applications.js";
 import { notifyAdminVoterStart } from "./notify-admin-voter-start.js";
+import {
+  createAdminReplyKeyboard,
+  createPollViewerReplyKeyboard,
+  createVoterReplyKeyboard,
+  MY_APPLICATIONS_BUTTON,
+  NOTIFY_VOTERS_BUTTON,
+  POLL_SUMMARY_BUTTON,
+} from "./reply-keyboard.js";
+import {
+  findVoterNameByTelegramUserId,
+  resolveKnownVoter,
+} from "../voters/resolve-known-voter.js";
 import {
   formatPendingMessages,
   PENDING_MESSAGE_PARSE_MODE,
@@ -47,11 +60,7 @@ const LOGIN_PASSWORD_PROMPT =
   "Сообщение с паролем будет удалено после проверки.";
 
 function createPollKeyboard(): InlineKeyboard {
-  return new InlineKeyboard().text("Проверить голосования", POLL_CALLBACK_DATA);
-}
-
-function createMainKeyboard(): InlineKeyboard {
-  return createPollKeyboard().row().text("Разослать напоминания", NOTIFY_CALLBACK_DATA);
+  return new InlineKeyboard().text(POLL_SUMMARY_BUTTON, POLL_CALLBACK_DATA);
 }
 
 function isMainAdmin(ctx: { from?: { id: number } }, adminUserId: number): boolean {
@@ -170,6 +179,57 @@ async function handlePollPending(
   }
 }
 
+async function isBoundVoter(telegramUserId: number): Promise<boolean> {
+  const registry = await loadVotersRegistry();
+  return findVoterNameByTelegramUserId(registry, telegramUserId) != null;
+}
+
+async function handleNotifyVoters(ctx: {
+  reply: (text: string, options?: object) => Promise<{ chat: { id: number }; message_id: number }>;
+  api: Api;
+}): Promise<void> {
+  const loadingMessage = await ctx.reply("Загружаю данные и рассылаю напоминания…");
+
+  const fetchResult = await fetchPendingWithSession();
+
+  try {
+    if (!fetchResult.ok) {
+      if ("needsPrompt" in fetchResult) {
+        await replySessionError(ctx, fetchResult);
+        return;
+      }
+
+      await ctx.reply(`❌ Ошибка: ${fetchResult.error}`);
+      return;
+    }
+
+    await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
+
+    const registry = await loadVotersRegistry();
+    const eventId =
+      process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
+    const reminderState = await loadReminderState(eventId);
+    const notifyResult = await sendVoterNotifications(
+      ctx.api,
+      fetchResult.summary,
+      registry,
+      {
+        stallConfig: loadStallConfig(),
+        speechFirstSeen: reminderState.speechFirstSeen ?? {},
+      },
+    );
+
+    await ctx.reply(formatNotifyReport(notifyResult), {
+      parse_mode: PENDING_MESSAGE_PARSE_MODE,
+    });
+  } finally {
+    await ctx.api.deleteMessage(
+      loadingMessage.chat.id,
+      loadingMessage.message_id,
+    );
+  }
+}
+
 async function replyVotersSyncNote(
   ctx: { reply: (text: string) => Promise<unknown> },
   added: string[],
@@ -195,16 +255,23 @@ export function createBot(config: BotConfig): Bot {
       await notifyAdminVoterStart(ctx.api, config.adminUserId, from, bindResult);
 
       if (await isPollViewer(from.id)) {
+        const known = await resolveKnownVoter(bindResult, from.id, from.username);
         await ctx.reply(
           "Бот напоминаний о голосовании по заявкам HolyJS.\n\n" +
             "Доступна сводка непроголосованных по заявкам.",
-          { reply_markup: createPollKeyboard() },
+          {
+            reply_markup: known
+              ? createPollViewerReplyKeyboard()
+              : createPollKeyboard(),
+          },
         );
         return;
       }
 
+      const known = await resolveKnownVoter(bindResult, from.id, from.username);
       await ctx.reply(formatVoterStartMessage(bindResult, from.id), {
         parse_mode: "Markdown",
+        ...(known ? { reply_markup: createVoterReplyKeyboard() } : {}),
       });
       return;
     }
@@ -218,7 +285,7 @@ export function createBot(config: BotConfig): Bot {
           "Проверка — сводка в этот чат.\n" +
           "Рассылка — личные напоминания голосующим (привязка по /start и username в voters.json)." +
           bindNote,
-        { reply_markup: createMainKeyboard() },
+        { reply_markup: createAdminReplyKeyboard() },
       );
       return;
     }
@@ -250,6 +317,33 @@ export function createBot(config: BotConfig): Bot {
 
     if (ctx.callbackQuery) {
       await ctx.answerCallbackQuery({ text: "Нет доступа" });
+      return;
+    }
+
+    const messageText = ctx.message?.text;
+
+    if (messageText === MY_APPLICATIONS_BUTTON) {
+      if (userId != null && (await isBoundVoter(userId))) {
+        await next();
+        return;
+      }
+    }
+
+    if (
+      messageText === POLL_SUMMARY_BUTTON &&
+      userId != null &&
+      (await isPollViewer(userId))
+    ) {
+      await next();
+      return;
+    }
+
+    if (
+      messageText === NOTIFY_VOTERS_BUTTON &&
+      userId != null &&
+      isMainAdmin(ctx, config.adminUserId)
+    ) {
+      await next();
       return;
     }
 
@@ -306,7 +400,7 @@ export function createBot(config: BotConfig): Bot {
       await ctx.reply(
         "✅ Вход в jEvent выполнен. Сессия сохранена.\n\n" +
           "Теперь можно проверять голосования и рассылать напоминания.",
-        { reply_markup: createMainKeyboard() },
+        { reply_markup: createAdminReplyKeyboard() },
       );
       return;
     }
@@ -320,6 +414,24 @@ export function createBot(config: BotConfig): Bot {
     await ctx.reply(`❌ ${message}\n\n${LOGIN_USERNAME_PROMPT}`);
   });
 
+  bot.hears(MY_APPLICATIONS_BUTTON, async (ctx) => {
+    await handleMyApplications(ctx);
+  });
+
+  bot.hears(POLL_SUMMARY_BUTTON, async (ctx) => {
+    if (!isMainAdmin(ctx, config.adminUserId) && !(await isPollViewer(ctx.from?.id ?? -1))) {
+      return;
+    }
+    await handlePollPending(ctx, config.adminUserId);
+  });
+
+  bot.hears(NOTIFY_VOTERS_BUTTON, async (ctx) => {
+    if (!isMainAdmin(ctx, config.adminUserId)) {
+      return;
+    }
+    await handleNotifyVoters(ctx);
+  });
+
   bot.callbackQuery(POLL_CALLBACK_DATA, async (ctx) => {
     await ctx.answerCallbackQuery();
     await handlePollPending(ctx, config.adminUserId);
@@ -327,47 +439,7 @@ export function createBot(config: BotConfig): Bot {
 
   bot.callbackQuery(NOTIFY_CALLBACK_DATA, async (ctx) => {
     await ctx.answerCallbackQuery();
-
-    const loadingMessage = await ctx.reply("Загружаю данные и рассылаю напоминания…");
-
-    const fetchResult = await fetchPendingWithSession();
-
-    try {
-      if (!fetchResult.ok) {
-        if ("needsPrompt" in fetchResult) {
-          await replySessionError(ctx, fetchResult);
-          return;
-        }
-
-        await ctx.reply(`❌ Ошибка: ${fetchResult.error}`);
-        return;
-      }
-
-      await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
-
-      const registry = await loadVotersRegistry();
-      const eventId =
-        process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
-      const reminderState = await loadReminderState(eventId);
-      const notifyResult = await sendVoterNotifications(
-        ctx.api,
-        fetchResult.summary,
-        registry,
-        {
-          stallConfig: loadStallConfig(),
-          speechFirstSeen: reminderState.speechFirstSeen ?? {},
-        },
-      );
-
-      await ctx.reply(formatNotifyReport(notifyResult), {
-        parse_mode: PENDING_MESSAGE_PARSE_MODE,
-      });
-    } finally {
-      await ctx.api.deleteMessage(
-        loadingMessage.chat.id,
-        loadingMessage.message_id,
-      );
-    }
+    await handleNotifyVoters(ctx);
   });
 
   bot.catch((error) => {

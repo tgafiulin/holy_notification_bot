@@ -33,13 +33,26 @@ function formatDmHeader(
   );
 }
 
-function formatPendingItem(item: Pick<PendingVote, "authorNames" | "speechTitle">): string {
+export function formatPendingItemLine(
+  item: Pick<PendingVote, "authorNames" | "speechTitle">,
+): string {
   return `• ${escapeHtml(item.authorNames)} — ${escapeHtml(item.speechTitle)}`;
+}
+
+function formatPendingItem(item: Pick<PendingVote, "authorNames" | "speechTitle">): string {
+  return formatPendingItemLine(item);
 }
 
 export type FormatVoterDmOptions = {
   stallFilterActive?: boolean;
 };
+
+export function formatVoterMessageFooter(
+  summary: Pick<PendingSummary, "eventId">,
+): string {
+  const pollingUrl = `https://jevent.jugru.org/polling/${summary.eventId}`;
+  return `\n\nПожалуйста, проголосуйте в jEvent.\n${pollingUrl}`;
+}
 
 export function formatVoterDmMessages(
   summary: PendingSummary,
@@ -48,8 +61,7 @@ export function formatVoterDmMessages(
 ): string[] {
   const stallFilterActive = options.stallFilterActive ?? false;
   const itemLines = pending.map(formatPendingItem);
-  const pollingUrl = `https://jevent.jugru.org/polling/${summary.eventId}`;
-  const footer = `\n\nПожалуйста, проголосуйте в jEvent.\n${pollingUrl}`;
+  const footer = formatVoterMessageFooter(summary);
 
   const messages: string[] = [];
   let current = formatDmHeader(summary, pending.length, stallFilterActive);
