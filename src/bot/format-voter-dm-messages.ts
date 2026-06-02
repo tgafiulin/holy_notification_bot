@@ -28,7 +28,8 @@ export function formatVoterDmMessages(
   pending: PendingVote[],
 ): string[] {
   const itemLines = pending.map(formatPendingItem);
-  const footer = "\n\nПожалуйста, проголосуйте в jEvent.";
+  const pollingUrl = `https://jevent.jugru.org/polling/${summary.eventId}`;
+  const footer = `\n\nПожалуйста, проголосуйте в jEvent.\n${pollingUrl}`;
 
   const messages: string[] = [];
   let current = formatDmHeader(summary, pending.length);
