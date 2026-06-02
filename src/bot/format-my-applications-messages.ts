@@ -1,18 +1,10 @@
 import type { PendingVote } from "../models/jevent.js";
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
-import {
-  formatPendingItemLine,
-  formatVoterMessageFooter,
-} from "./format-voter-dm-messages.js";
-
-const TELEGRAM_MESSAGE_LIMIT = 4096;
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
+import { escapeHtml } from "../telegram/html.js";
+import { formatPendingItemLine } from "../telegram/pending-line.js";
+import { pluralizeApplications } from "../telegram/pluralize.js";
+import { splitTelegramMessages } from "../telegram/split-messages.js";
+import { formatVoterMessageFooter } from "./format-voter-dm-messages.js";
 
 export type FormatMyApplicationsOptions = {
   stallFilterActive: boolean;
@@ -41,11 +33,8 @@ function formatStalledSectionIntro(
     return "\nНет заявок, которые давно ждут вашего голоса.\n";
   }
 
-  const word =
-    count === 1 ? "заявка" : count < 5 ? "заявки" : "заявок";
-
   return (
-    `\n<b>Давно ждут вашего голоса</b> (${count} ${word} в «${status}»):\n`
+    `\n<b>Давно ждут вашего голоса</b> (${count} ${pluralizeApplications(count)} в «${status}»):\n`
   );
 }
 
@@ -54,10 +43,7 @@ function formatRecentSectionIntro(count: number): string {
     return "";
   }
 
-  const word =
-    count === 1 ? "заявка" : count < 5 ? "заявки" : "заявок";
-
-  return `\n<b>Недавно в ревью</b> (${count} ${word}):\n`;
+  return `\n<b>Недавно в ревью</b> (${count} ${pluralizeApplications(count)}):\n`;
 }
 
 export function formatMyApplicationsMessages(
@@ -80,21 +66,11 @@ export function formatMyApplicationsMessages(
     itemBlocks.push(`\n${formatPendingItemLine(item)}`);
   }
 
-  const messages: string[] = [];
-  let current = intro;
-
-  for (const block of itemBlocks) {
-    if (current.length + block.length + footer.length > TELEGRAM_MESSAGE_LIMIT) {
-      messages.push(current.trimEnd());
-      current = block.trimStart();
-      continue;
-    }
-    current += block;
-  }
-
-  if (current.trim()) {
-    messages.push((current + footer).trimEnd());
-  }
+  const messages = splitTelegramMessages({
+    prefix: intro,
+    parts: itemBlocks,
+    suffix: footer,
+  });
 
   return messages.length > 0 ? messages : [(intro + footer).trimEnd()];
 }

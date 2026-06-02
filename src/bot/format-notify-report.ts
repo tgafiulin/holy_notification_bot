@@ -1,11 +1,5 @@
 import type { NotifyVotersResult } from "../services/send-voter-notifications.js";
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
+import { escapeHtml } from "../telegram/html.js";
 
 export function formatNotifyReport(result: NotifyVotersResult): string {
   const lines: string[] = ["📤 <b>Результаты рассылки</b>", ""];

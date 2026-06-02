@@ -32,7 +32,7 @@
 - Отчёт рассылки: `format-notify-report.ts` + обёртка в `format-reminder-messages.ts`
 - `voters/*` — мелкие файлы, не дублирование
 - Футер DM / «Мои заявки»: `formatVoterMessageFooter` → `JEVENT_URLS.polling`
-- Строка заявки: `formatPendingItemLine` в `format-voter-dm-messages.ts` (переедет в фазе 1)
+- Строка заявки: `formatPendingItemLine` в `src/telegram/pending-line.ts`
 
 ---
 
@@ -40,9 +40,9 @@
 
 | # | Проблема | Где |
 |---|----------|-----|
-| 1 | 4× `escapeHtml` + inline в reminder | `format-pending-messages`, `format-voter-dm-messages`, `format-my-applications-messages`, `format-notify-report`, `format-reminder-messages` |
-| 2 | 3× split по 4096 | те же format-* |
-| 3 | Склонение «заявка/заявки/заявок» | `format-voter-dm-messages`, `format-my-applications-messages` |
+| 1 | ~~4× `escapeHtml`~~ | `src/telegram/html.ts` |
+| 2 | ~~3× split по 4096~~ | `src/telegram/split-messages.ts` |
+| 3 | ~~Склонение~~ | `src/telegram/pluralize.ts` |
 | 4 | 3 константы parse mode = `"HTML"` | `PENDING_MESSAGE_PARSE_MODE`, `VOTER_DM_PARSE_MODE`, `HTML_PARSE_MODE` |
 | 5 | Два контракта fetch в боте | обёртка в `bot.ts` vs прямой вызов в `handle-my-applications` |
 | 6 | Дубль handlers (loading/fetch/delete) | `handlePollPending`, `handleNotifyVoters`, `handle-my-applications` |
@@ -76,8 +76,8 @@ telegram/
   pending-line.ts      — formatPendingItemLine (из format-voter-dm-messages)
 ```
 
-- [ ] Подключить во всех format-*
-- [ ] Inline escape в `formatScheduledSessionError` → `escapeHtml`
+- [x] Подключить во всех format-*
+- [x] Inline escape в `formatScheduledSessionError` → `escapeHtml`
 
 **Проверка:** граница 4096 с footer; длинный список заявок.
 
@@ -170,7 +170,7 @@ telegram/
 | Фаза | Статус | PR / коммит |
 |------|--------|-------------|
 | 0 | ✅ | refactor: фаза 0 — уборка и константы event/timezone |
-| 1 | ⏳ | |
+| 1 | ✅ | refactor: фаза 1 — src/telegram/ (html, pluralize, split, pending-line) |
 | 2 | ⏳ | |
 | 3 | ⏳ | |
 | 4 | ⏳ | |

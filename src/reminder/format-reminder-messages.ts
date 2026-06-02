@@ -1,5 +1,6 @@
 import type { NotifyVotersResult } from "../services/send-voter-notifications.js";
 import { formatNotifyReport } from "../bot/format-notify-report.js";
+import { escapeHtml } from "../telegram/html.js";
 import type { ReminderSlot } from "./types.js";
 import { formatSlotLabel } from "./reminder-slots.js";
 
@@ -56,6 +57,6 @@ export function formatScheduledSessionError(
   return (
     "❌ <b>Автоматическая рассылка не выполнена</b>\n\n" +
     slotLine +
-    `Причина: ${message.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}`
+    `Причина: ${escapeHtml(message)}`
   );
 }

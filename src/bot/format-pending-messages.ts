@@ -1,17 +1,10 @@
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
+import { escapeHtml } from "../telegram/html.js";
+import { splitTelegramMessages } from "../telegram/split-messages.js";
 import { formatVoterLabelHtml } from "../voters/format-voter-label.js";
 import type { VotersMap } from "../voters/types.js";
 
-const TELEGRAM_MESSAGE_LIMIT = 4096;
-
 export const PENDING_MESSAGE_PARSE_MODE = "HTML" as const;
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 function formatSummaryHeader(summary: PendingSummary): string {
   return (
@@ -56,24 +49,10 @@ export function formatPendingMessages(
     ),
   );
 
-  const messages: string[] = [];
-  let current = formatSummaryHeader(summary) + "\n";
+  const parts = voterBlocks.map((block, i) => (i === 0 ? "\n" : "\n\n") + block);
 
-  for (let i = 0; i < voterBlocks.length; i++) {
-    const block = (i === 0 ? "\n" : "\n\n") + voterBlocks[i];
-
-    if (current.length + block.length > TELEGRAM_MESSAGE_LIMIT) {
-      messages.push(current.trimEnd());
-      current = block.trimStart();
-      continue;
-    }
-
-    current += block;
-  }
-
-  if (current.trim()) {
-    messages.push(current.trimEnd());
-  }
-
-  return messages;
+  return splitTelegramMessages({
+    prefix: `${formatSummaryHeader(summary)}\n`,
+    parts,
+  });
 }
