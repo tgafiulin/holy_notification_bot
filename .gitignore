@@ -6,4 +6,5 @@ voters.json
 voters.example.json
 *.log
 bot-image.tar.gz
-docs/PROJECT.md
+AGENTS.md
+docs/PLAN.md

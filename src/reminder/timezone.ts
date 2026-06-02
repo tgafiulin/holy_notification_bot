@@ -85,3 +85,16 @@ export function addDaysToLocalDate(
     day: date.getUTCDate(),
   };
 }
+
+/** Whole calendar days from `from` to `to` in `timeZone` (same local calendar day → 0). */
+export function calendarDaysBetweenInTimeZone(
+  from: Date,
+  to: Date,
+  timeZone: string,
+): number {
+  const a = getZonedDateParts(from, timeZone);
+  const b = getZonedDateParts(to, timeZone);
+  const aUtc = Date.UTC(a.year, a.month - 1, a.day);
+  const bUtc = Date.UTC(b.year, b.month - 1, b.day);
+  return Math.floor((bUtc - aUtc) / (24 * 60 * 60 * 1000));
+}

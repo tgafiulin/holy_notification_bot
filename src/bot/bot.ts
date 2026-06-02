@@ -6,6 +6,9 @@ import {
 } from "../auth/ensure-session.js";
 import { fetchPendingWithSession as fetchPendingFromService } from "../services/fetch-pending-with-session.js";
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
+import { DEFAULT_EVENT_ID } from "../config/constants.js";
+import { loadStallConfig } from "../config/stall-config.js";
+import { loadReminderState } from "../reminder/reminder-state-io.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
 import type { BotConfig } from "./config.js";
 import { bindTelegramUserId } from "../voters/bind-telegram-user-id.js";
@@ -343,10 +346,17 @@ export function createBot(config: BotConfig): Bot {
       await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
 
       const registry = await loadVotersRegistry();
+      const eventId =
+        process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
+      const reminderState = await loadReminderState(eventId);
       const notifyResult = await sendVoterNotifications(
         ctx.api,
         fetchResult.summary,
         registry,
+        {
+          stallConfig: loadStallConfig(),
+          speechFirstSeen: reminderState.speechFirstSeen ?? {},
+        },
       );
 
       await ctx.reply(formatNotifyReport(notifyResult), {

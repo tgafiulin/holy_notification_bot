@@ -37,6 +37,8 @@ export type Speech = {
   tempSpeakerName: string | null;
   speakers: Speaker[];
   voteTOList: VoteTOListItem[];
+  /** Last internal status change; for «Ревью ПК» ≈ in review since. */
+  lastStatusUpdate?: number[] | null;
 };
 
 export type PollingResponse = {
@@ -60,6 +62,7 @@ export type PendingVote = {
   jiraKey: string;
   voterId: number;
   voterName: string;
+  lastStatusUpdate: number[] | null;
 };
 
 export type VoterPendingSummary = {

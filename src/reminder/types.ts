@@ -26,9 +26,15 @@ export type VoterReminderRecord = {
   lastRemindedAt: string;
 };
 
+export type SpeechFirstSeenRecord = {
+  firstSeenAt: string;
+};
+
 export type ReminderState = {
   eventId: string;
   processedSlots: string[];
   missedNotifiedSlots: string[];
   voters: Record<string, VoterReminderRecord>;
+  /** Fallback in-review date when Speech.lastStatusUpdate is null. */
+  speechFirstSeen?: Record<string, SpeechFirstSeenRecord>;
 };

@@ -54,6 +54,7 @@ export function collectPendingVotes(
         jiraKey: speech.jiraKey,
         voterId: voter.id,
         voterName: voter.name,
+        lastStatusUpdate: speech.lastStatusUpdate ?? null,
       });
     }
   }

@@ -3,6 +3,7 @@ import type { Api } from "grammy";
 import { PENDING_MESSAGE_PARSE_MODE } from "../bot/format-pending-messages.js";
 import { formatVotersSyncNote } from "../voters/format-voters-sync-note.js";
 import { loadVotersRegistry } from "../voters/load-voters.js";
+import { loadStallConfig } from "../config/stall-config.js";
 import { fetchPendingWithSession } from "../services/fetch-pending-with-session.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
 import { checkAndNotifyMissedSlots } from "./check-missed-slots.js";
@@ -93,14 +94,20 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
   }
 
   const registry = await loadVotersRegistry();
-  const notifyResult = await sendVoterNotifications(deps.api, summary, registry);
+  const notifyResult = await sendVoterNotifications(deps.api, summary, registry, {
+    stallConfig: loadStallConfig(),
+    speechFirstSeen: state.speechFirstSeen ?? {},
+  });
+
+  state.speechFirstSeen = notifyResult.speechFirstSeen;
 
   const remindedAt = new Date().toISOString();
 
   for (const sent of notifyResult.sent) {
     state.voters[sent.voterName] = { lastRemindedAt: remindedAt };
-    await saveReminderState(state);
   }
+
+  await saveReminderState(state);
 
   await sendAdmin(
     deps,

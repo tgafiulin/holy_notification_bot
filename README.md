@@ -41,6 +41,8 @@ npm run login:headed
 
 Переменные окружения — см. `.env.example`.
 
+**Застой (v2):** `STALL_THRESHOLD_DAYS` (по умолчанию 14) — в автоматической и ручной рассылке только заявки, у которых `lastStatusUpdate` не моложе порога; админская сводка «Проверить голосования» — все pending. `0` отключает фильтр.
+
 После логина сессия сохраняется в `.data/session.json`.
 
 ## Маппинг голосующих
@@ -133,4 +135,4 @@ docker compose -f docker-compose.prod.yml up -d
 - В `.env` на VPS: `REMINDER_TIMEZONE`, `REMINDER_SLOTS` (по умолчанию вс 16:00 / вт 13:00 / чт 16:00 MSK).
 - После деплоя с планировщиком: дождаться слота или один раз `docker compose exec bot npm run reminder-once` для проверки (осторожно: реальные DM).
 
-Подробные чеклисты — в `docs/PROJECT.md` (локально).
+Контекст для разработки и AI — `AGENTS.md` в корне (локально). План v2 — `docs/PLAN.md` (локально).
