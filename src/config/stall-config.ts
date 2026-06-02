@@ -1,3 +1,5 @@
+import { DEFAULT_TIMEZONE } from "./constants.js";
+
 export const DEFAULT_STALL_THRESHOLD_DAYS = 14;
 
 export type StallConfig = {
@@ -23,8 +25,7 @@ function parseThresholdDays(raw: string | undefined): number {
 }
 
 export function loadStallConfig(): StallConfig {
-  const timeZone =
-    process.env.REMINDER_TIMEZONE?.trim() || "Europe/Moscow";
+  const timeZone = DEFAULT_TIMEZONE;
 
   let thresholdDays: number;
   try {

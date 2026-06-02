@@ -8,6 +8,7 @@ import {
   getCredentialsFromEnv,
 } from "../auth/ensure-session.js";
 import { createAuthenticatedContext, verifySession } from "../auth/login.js";
+import { DEFAULT_EVENT_ID } from "../config/constants.js";
 import { JEVENT_URLS } from "../config/urls.js";
 
 async function promptCredentials(): Promise<{ username: string; password: string }> {
@@ -79,8 +80,7 @@ async function main(): Promise<void> {
     throw new Error("Session verification failed.");
   }
 
-  const eventId = process.env.JEVENT_EVENT_ID ?? "100924";
-  const pollingUrl = JEVENT_URLS.polling(eventId);
+  const pollingUrl = JEVENT_URLS.polling(DEFAULT_EVENT_ID);
   console.log(`\nOpening polling page: ${pollingUrl}`);
 
   await page.goto(pollingUrl, { waitUntil: "domcontentloaded" });

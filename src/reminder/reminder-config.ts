@@ -1,7 +1,5 @@
-import { DEFAULT_EVENT_ID } from "../config/constants.js";
+import { DEFAULT_EVENT_ID, DEFAULT_TIMEZONE } from "../config/constants.js";
 import type { ReminderConfig, ReminderSlotDefinition } from "./types.js";
-
-const DEFAULT_TIMEZONE = "Europe/Moscow";
 
 const DEFAULT_SLOT_STRING = "Sun:16:00,Tue:13:00,Thu:16:00";
 
@@ -64,8 +62,8 @@ function parseReminderSlots(raw: string | undefined): ReminderSlotDefinition[] {
 }
 
 export function loadReminderConfig(): ReminderConfig {
-  const timezone = process.env.REMINDER_TIMEZONE?.trim() || DEFAULT_TIMEZONE;
-  const eventId = process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
+  const timezone = DEFAULT_TIMEZONE;
+  const eventId = DEFAULT_EVENT_ID;
 
   let slots: ReminderSlotDefinition[];
   try {

@@ -60,30 +60,6 @@ function formatRecentSectionIntro(count: number): string {
   return `\n<b>Недавно в ревью</b> (${count} ${word}):\n`;
 }
 
-export function buildMyApplicationsBody(
-  summary: PendingSummary,
-  stalled: PendingVote[],
-  recent: PendingVote[],
-  options: FormatMyApplicationsOptions,
-): string {
-  const { stallFilterActive } = options;
-  let body =
-    formatMainHeader(summary) +
-    formatStalledSectionIntro(summary, stalled.length, stallFilterActive);
-
-  for (const item of stalled) {
-    body += `\n${formatPendingItemLine(item)}`;
-  }
-
-  body += formatRecentSectionIntro(recent.length);
-
-  for (const item of recent) {
-    body += `\n${formatPendingItemLine(item)}`;
-  }
-
-  return body;
-}
-
 export function formatMyApplicationsMessages(
   summary: PendingSummary,
   stalled: PendingVote[],

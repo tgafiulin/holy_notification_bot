@@ -84,7 +84,7 @@ function inspectSpeechVote(sv: SpeechVote): string[] {
 }
 
 async function main(): Promise<void> {
-  const eventId = process.env.JEVENT_EVENT_ID ?? DEFAULT_EVENT_ID;
+  const eventId = DEFAULT_EVENT_ID;
   const client = await createAuthenticatedClient();
 
   try {

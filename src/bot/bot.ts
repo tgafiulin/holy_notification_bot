@@ -206,9 +206,7 @@ async function handleNotifyVoters(ctx: {
     await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
 
     const registry = await loadVotersRegistry();
-    const eventId =
-      process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
-    const reminderState = await loadReminderState(eventId);
+    const reminderState = await loadReminderState(DEFAULT_EVENT_ID);
     const notifyResult = await sendVoterNotifications(
       ctx.api,
       fetchResult.summary,

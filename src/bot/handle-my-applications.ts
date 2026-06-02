@@ -70,9 +70,7 @@ export async function handleMyApplications(ctx: MyApplicationsContext): Promise<
       return;
     }
 
-    const eventId =
-      process.env.JEVENT_EVENT_ID?.trim() || DEFAULT_EVENT_ID;
-    const reminderState = await loadReminderState(eventId);
+    const reminderState = await loadReminderState(DEFAULT_EVENT_ID);
     const stallConfig = loadStallConfig();
     const now = new Date();
 

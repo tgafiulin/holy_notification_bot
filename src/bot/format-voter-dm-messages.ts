@@ -1,3 +1,4 @@
+import { JEVENT_URLS } from "../config/urls.js";
 import type { PendingVote } from "../models/jevent.js";
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
 
@@ -39,10 +40,6 @@ export function formatPendingItemLine(
   return `• ${escapeHtml(item.authorNames)} — ${escapeHtml(item.speechTitle)}`;
 }
 
-function formatPendingItem(item: Pick<PendingVote, "authorNames" | "speechTitle">): string {
-  return formatPendingItemLine(item);
-}
-
 export type FormatVoterDmOptions = {
   stallFilterActive?: boolean;
 };
@@ -50,7 +47,7 @@ export type FormatVoterDmOptions = {
 export function formatVoterMessageFooter(
   summary: Pick<PendingSummary, "eventId">,
 ): string {
-  const pollingUrl = `https://jevent.jugru.org/polling/${summary.eventId}`;
+  const pollingUrl = JEVENT_URLS.polling(summary.eventId);
   return `\n\nПожалуйста, проголосуйте в jEvent.\n${pollingUrl}`;
 }
 
@@ -60,7 +57,7 @@ export function formatVoterDmMessages(
   options: FormatVoterDmOptions = {},
 ): string[] {
   const stallFilterActive = options.stallFilterActive ?? false;
-  const itemLines = pending.map(formatPendingItem);
+  const itemLines = pending.map(formatPendingItemLine);
   const footer = formatVoterMessageFooter(summary);
 
   const messages: string[] = [];

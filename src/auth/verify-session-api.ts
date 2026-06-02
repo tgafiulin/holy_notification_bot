@@ -6,7 +6,7 @@ import type { PollingResponse } from "../models/jevent.js";
 
 export async function isSessionValid(
   request: APIRequestContext,
-  eventId: string = process.env.JEVENT_EVENT_ID ?? DEFAULT_EVENT_ID,
+  eventId: string = DEFAULT_EVENT_ID,
 ): Promise<boolean> {
   try {
     const response = await request.post(JEVENT_URLS.votePolling(eventId), {

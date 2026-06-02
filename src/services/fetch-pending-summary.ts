@@ -27,7 +27,7 @@ export type PendingSummary = {
 
 export async function fetchPendingSummary(
   request: APIRequestContext,
-  eventId: string = process.env.JEVENT_EVENT_ID ?? DEFAULT_EVENT_ID,
+  eventId: string = DEFAULT_EVENT_ID,
 ): Promise<PendingSummary> {
   const [internalStatuses, pollingData, pcMembers] = await Promise.all([
     fetchInternalStatuses(request, eventId),

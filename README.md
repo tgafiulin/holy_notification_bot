@@ -132,7 +132,7 @@ docker compose -f docker-compose.prod.yml up -d
 - «Разослать напоминания» — DM уходят голосующим с `telegramUserId`.
 - Перезапуск контейнера — `session.json` и `voters.json` на месте.
 - Удалить `.data/session.json` на хосте → следующий poll перелогинится из `.env`.
-- В `.env` на VPS: `REMINDER_TIMEZONE`, `REMINDER_SLOTS` (по умолчанию вс 16:00 / вт 13:00 / чт 16:00 MSK).
+- В `.env` на VPS: `REMINDER_SLOTS` (по умолчанию вс 16:00 / вт 13:00 / чт 16:00 MSK; timezone — `DEFAULT_TIMEZONE` в `constants.ts`).
 - После деплоя с планировщиком: дождаться слота или один раз `docker compose exec bot npm run reminder-once` для проверки (осторожно: реальные DM).
 
 Контекст для разработки и AI — `AGENTS.md` в корне (локально). План v2 — `docs/PLAN.md` (локально).
