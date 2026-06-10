@@ -14,9 +14,9 @@ async function main(): Promise<void> {
     const summary = await fetchPendingSummary(client.request);
     const votersMap = await loadVotersMap();
 
-    console.log(`Total speeches in response: ${summary.totalSpeechCount}`);
+    console.log(`Total proposals in response: ${summary.totalProposalCount}`);
     console.log(
-      `Eligible internal status "${summary.eligibleStatusName}" (id=${summary.eligibleStatusId}): ${summary.eligibleSpeechCount}`,
+      `Eligible status "${summary.eligibleStatusName}": ${summary.eligibleProposalCount}`,
     );
     console.log(`Pending vote assignments: ${summary.pendingCount}\n`);
 
@@ -32,7 +32,7 @@ async function main(): Promise<void> {
         : "";
       console.log(`${voter.voterName}${tgSuffix} (${voter.pending.length}):`);
       for (const item of voter.pending) {
-        console.log(`  - ${item.authorNames} — ${item.speechTitle}`);
+        console.log(`  - ${item.authorNames} — ${item.proposalTitle}`);
       }
       console.log();
     }

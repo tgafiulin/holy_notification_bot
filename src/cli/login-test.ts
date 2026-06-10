@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   const { page, browser } = session;
 
   console.log(`Current URL: ${page.url()}`);
-  console.log("Session saved to .data/session.json");
+  console.log("Session saved to .data/session.json and .data/beta-token.json");
 
   const valid = await verifySession(page);
   if (!valid) {
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
 
   await page.goto(pollingUrl, { waitUntil: "domcontentloaded" });
 
-  if (page.url().includes("/login")) {
+  if (page.url().includes("/login") || page.url().includes("/auth/login")) {
     console.error("Cannot access polling page: redirected to login.");
     process.exitCode = 1;
   } else {

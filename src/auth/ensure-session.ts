@@ -1,11 +1,12 @@
 import { chromium } from "playwright";
 
+import { createAuthBrowserContext } from "./browser-context.js";
 import {
   LoginError,
   loginWithPlaywright,
   type LoginCredentials,
 } from "./login.js";
-import { getSessionPath, sessionExists } from "./session.js";
+import { sessionExists } from "./session.js";
 import { isSessionValid } from "./verify-session-api.js";
 
 export type EnsureSessionResult =
@@ -35,9 +36,7 @@ async function isStoredSessionValid(
   const browser = await chromium.launch({ headless });
 
   try {
-    const context = await browser.newContext({
-      storageState: getSessionPath(),
-    });
+    const context = await createAuthBrowserContext(browser);
     return await isSessionValid(context.request);
   } finally {
     await browser.close();

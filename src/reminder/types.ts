@@ -35,6 +35,6 @@ export type ReminderState = {
   processedSlots: string[];
   missedNotifiedSlots: string[];
   voters: Record<string, VoterReminderRecord>;
-  /** Fallback in-review date when Speech.lastStatusUpdate is null. */
+  /** Fallback in-review date when proposal statusChangedAt is null. */
   speechFirstSeen?: Record<string, SpeechFirstSeenRecord>;
 };

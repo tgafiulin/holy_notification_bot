@@ -1,3 +1,4 @@
+import { STATUS_LABEL_VOTING } from "../config/constants.js";
 import type { NotifyVotersResult } from "../services/send-voter-notifications.js";
 import { formatNotifyReport } from "../bot/format-notify-report.js";
 import { escapeHtml } from "../telegram/html.js";
@@ -31,7 +32,7 @@ export function formatAllVotedAdminMessage(
     "🕐 <b>Автоматическая проверка</b>\n\n" +
     `Слот: ${label}\n` +
     `Event ${eventId}\n\n` +
-    "✅ Нет непроголосованных заявок в статусе «Ревью ПК» — рассылать нечего."
+    `✅ Нет непроголосованных заявок в статусе «${STATUS_LABEL_VOTING}» — рассылать нечего.`
   );
 }
 

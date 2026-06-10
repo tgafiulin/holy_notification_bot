@@ -9,8 +9,8 @@ export const PENDING_MESSAGE_PARSE_MODE = "HTML" as const;
 function formatSummaryHeader(summary: PendingSummary): string {
   return (
     `📊 Непроголосованные (event ${summary.eventId})\n\n` +
-    `Статус «${summary.eligibleStatusName}» (id=${summary.eligibleStatusId}): ` +
-    `${summary.eligibleSpeechCount} заявок\n` +
+    `Статус «${summary.eligibleStatusName}»: ` +
+    `${summary.eligibleProposalCount} заявок\n` +
     `Pending: ${summary.pendingCount}`
   );
 }
@@ -18,12 +18,12 @@ function formatSummaryHeader(summary: PendingSummary): string {
 function formatVoterBlock(
   voterName: string,
   pendingCount: number,
-  items: { authorNames: string; speechTitle: string }[],
+  items: { authorNames: string; proposalTitle: string }[],
   votersMap: VotersMap,
 ): string {
   const lines = items.map(
     (item) =>
-      `  • ${escapeHtml(item.authorNames)} — ${escapeHtml(item.speechTitle)}`,
+      `  • ${escapeHtml(item.authorNames)} — ${escapeHtml(item.proposalTitle)}`,
   );
   const label = formatVoterLabelHtml(voterName, votersMap, escapeHtml);
   return `${label} (${pendingCount}):\n${lines.join("\n")}`;

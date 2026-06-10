@@ -1,7 +1,9 @@
 import type { Api } from "grammy";
 
 import { PENDING_MESSAGE_PARSE_MODE } from "../bot/format-pending-messages.js";
+import { collectPollReportRecipientIds } from "../voters/can-user-view-poll.js";
 import { loadVotersRegistry } from "../voters/load-voters.js";
+import type { VotersRegistry } from "../voters/types.js";
 import { loadStallConfig } from "../config/stall-config.js";
 import { fetchPendingWithSession } from "../services/fetch-pending-with-session.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
@@ -22,12 +24,17 @@ export type ScheduledReminderDeps = {
   config: ReminderConfig;
 };
 
-async function sendAdmin(
+async function sendPollReports(
   deps: ScheduledReminderDeps,
+  registry: VotersRegistry,
   text: string,
   parseMode: typeof HTML_PARSE_MODE | typeof PENDING_MESSAGE_PARSE_MODE = HTML_PARSE_MODE,
 ): Promise<void> {
-  await deps.api.sendMessage(deps.adminUserId, text, { parse_mode: parseMode });
+  const recipients = collectPollReportRecipientIds(deps.adminUserId, registry);
+
+  for (const userId of recipients) {
+    await deps.api.sendMessage(userId, text, { parse_mode: parseMode });
+  }
 }
 
 function markSlotProcessed(state: Awaited<ReturnType<typeof loadReminderState>>, slotId: string): void {
@@ -36,10 +43,12 @@ function markSlotProcessed(state: Awaited<ReturnType<typeof loadReminderState>>,
   }
 }
 
-/** Notify admin about past slots that were never completed (no voter DMs). */
+/** Notify admin and poll viewers about past slots that were never completed (no voter DMs). */
 export async function runMissedSlotsCheck(deps: ScheduledReminderDeps): Promise<void> {
+  const registry = await loadVotersRegistry();
+
   await checkAndNotifyMissedSlots(deps.config, {
-    sendAdminMessage: (text) => sendAdmin(deps, text),
+    sendAdminMessage: (text) => sendPollReports(deps, registry, text),
   });
 }
 
@@ -58,6 +67,7 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
     return;
   }
 
+  const registry = await loadVotersRegistry();
   const fetchResult = await fetchPendingWithSession(deps.config.eventId);
 
   if (!fetchResult.ok) {
@@ -65,11 +75,12 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
       fetchResult.kind === "needs_credentials"
         ? fetchResult.message
         : fetchResult.kind === "session_failed"
-          ? `Сессия jEvent: ${fetchResult.message}`
+          ? `Сессия ЛКО: ${fetchResult.message}`
           : fetchResult.message;
 
-    await sendAdmin(
+    await sendPollReports(
       deps,
+      registry,
       formatScheduledSessionError(activeSlot, deps.config.timezone, message),
     );
     return;
@@ -78,16 +89,15 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
   const { summary } = fetchResult;
 
   if (summary.pendingCount === 0) {
-    await sendAdmin(
+    await sendPollReports(
       deps,
+      registry,
       formatAllVotedAdminMessage(activeSlot, deps.config.timezone, summary.eventId),
     );
     markSlotProcessed(state, activeSlot.id);
     await saveReminderState(state);
     return;
   }
-
-  const registry = await loadVotersRegistry();
   const notifyResult = await sendVoterNotifications(deps.api, summary, registry, {
     stallConfig: loadStallConfig(),
     speechFirstSeen: state.speechFirstSeen ?? {},
@@ -103,8 +113,9 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
 
   await saveReminderState(state);
 
-  await sendAdmin(
+  await sendPollReports(
     deps,
+    registry,
     formatScheduledNotifyReport(notifyResult, activeSlot, deps.config.timezone),
     PENDING_MESSAGE_PARSE_MODE,
   );

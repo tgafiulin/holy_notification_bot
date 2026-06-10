@@ -1,4 +1,4 @@
-import type { PendingVote } from "../models/jevent.js";
+import type { PendingAssignment } from "../models/program.js";
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
 import { escapeHtml } from "../telegram/html.js";
 import { formatPendingItemLine } from "../telegram/pending-line.js";
@@ -48,8 +48,8 @@ function formatRecentSectionIntro(count: number): string {
 
 export function formatMyApplicationsMessages(
   summary: PendingSummary,
-  stalled: PendingVote[],
-  recent: PendingVote[],
+  stalled: PendingAssignment[],
+  recent: PendingAssignment[],
   options: FormatMyApplicationsOptions,
 ): string[] {
   const footer = formatVoterMessageFooter(summary);

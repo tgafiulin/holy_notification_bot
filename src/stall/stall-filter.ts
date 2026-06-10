@@ -1,5 +1,5 @@
 import type { StallConfig } from "../config/stall-config.js";
-import type { PendingVote } from "../models/jevent.js";
+import type { PendingAssignment } from "../models/program.js";
 import { calendarDaysBetweenInTimeZone } from "../reminder/timezone.js";
 import {
   ensureSpeechFirstSeen,
@@ -12,7 +12,7 @@ export function isStallThresholdDisabled(config: StallConfig): boolean {
 }
 
 export function isStalledPending(
-  vote: PendingVote,
+  item: PendingAssignment,
   config: StallConfig,
   firstSeenMap: SpeechFirstSeenMap,
   now: Date,
@@ -21,7 +21,7 @@ export function isStalledPending(
     return true;
   }
 
-  const since = resolveInReviewSince(vote, firstSeenMap, now);
+  const since = resolveInReviewSince(item, firstSeenMap, now);
   if (since == null) {
     return false;
   }
@@ -31,25 +31,25 @@ export function isStalledPending(
 }
 
 export function filterStalledPending(
-  pending: PendingVote[],
+  pending: PendingAssignment[],
   config: StallConfig,
   firstSeenMap: SpeechFirstSeenMap,
   now: Date,
-): { stalled: PendingVote[]; firstSeenMap: SpeechFirstSeenMap } {
+): { stalled: PendingAssignment[]; firstSeenMap: SpeechFirstSeenMap } {
   if (isStallThresholdDisabled(config)) {
     return { stalled: pending, firstSeenMap };
   }
 
   let map = firstSeenMap;
-  const stalled: PendingVote[] = [];
+  const stalled: PendingAssignment[] = [];
 
-  for (const vote of pending) {
-    if (vote.lastStatusUpdate == null) {
-      map = ensureSpeechFirstSeen(map, vote.speechId, now);
+  for (const item of pending) {
+    if (item.statusChangedAt == null) {
+      map = ensureSpeechFirstSeen(map, item.proposalId, now);
     }
 
-    if (isStalledPending(vote, config, map, now)) {
-      stalled.push(vote);
+    if (isStalledPending(item, config, map, now)) {
+      stalled.push(item);
     }
   }
 
@@ -59,11 +59,11 @@ export function filterStalledPending(
 export const STALL_SKIP_REASON = "ниже порога застоя";
 
 export function splitPendingByStall(
-  pending: PendingVote[],
+  pending: PendingAssignment[],
   config: StallConfig,
   firstSeenMap: SpeechFirstSeenMap,
   now: Date,
-): { stalled: PendingVote[]; recent: PendingVote[]; firstSeenMap: SpeechFirstSeenMap } {
+): { stalled: PendingAssignment[]; recent: PendingAssignment[]; firstSeenMap: SpeechFirstSeenMap } {
   if (isStallThresholdDisabled(config)) {
     return { stalled: [...pending], recent: [], firstSeenMap };
   }
@@ -74,8 +74,8 @@ export function splitPendingByStall(
     firstSeenMap,
     now,
   );
-  const stalledIds = new Set(stalled.map((v) => v.speechId));
-  const recent = pending.filter((v) => !stalledIds.has(v.speechId));
+  const stalledIds = new Set(stalled.map((item) => item.proposalId));
+  const recent = pending.filter((item) => !stalledIds.has(item.proposalId));
 
   return { stalled, recent, firstSeenMap: map };
 }

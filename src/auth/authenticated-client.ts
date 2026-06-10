@@ -1,6 +1,7 @@
 import { chromium, type APIRequestContext, type Browser } from "playwright";
 
-import { getSessionPath, sessionExists } from "./session.js";
+import { createAuthBrowserContext } from "./browser-context.js";
+import { sessionExists } from "./session.js";
 
 export type AuthenticatedClient = {
   request: APIRequestContext;
@@ -19,7 +20,7 @@ export async function createAuthenticatedClient(options?: {
 
   const headless = options?.headless ?? true;
   const browser = await chromium.launch({ headless });
-  const context = await browser.newContext({ storageState: getSessionPath() });
+  const context = await createAuthBrowserContext(browser);
   const request = context.request;
 
   return {

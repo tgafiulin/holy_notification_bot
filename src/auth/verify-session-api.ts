@@ -2,31 +2,20 @@ import type { APIRequestContext } from "playwright";
 
 import { DEFAULT_EVENT_ID } from "../config/constants.js";
 import { JEVENT_URLS } from "../config/urls.js";
-import type { PollingResponse } from "../models/jevent.js";
 
 export async function isSessionValid(
   request: APIRequestContext,
   eventId: string = DEFAULT_EVENT_ID,
 ): Promise<boolean> {
   try {
-    const response = await request.post(JEVENT_URLS.votePolling(eventId), {
-      data: {
-        excludedStatuses: [],
-        excludedInternalStatuses: [],
-      },
+    const response = await request.get(JEVENT_URLS.proposals(eventId), {
       headers: {
-        Accept: "*/*",
-        "Content-Type": "application/json",
+        Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest",
       },
     });
 
-    if (!response.ok()) {
-      return false;
-    }
-
-    const data = (await response.json()) as PollingResponse;
-    return Array.isArray(data.speeches);
+    return response.ok();
   } catch {
     return false;
   }

@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import type { BrowserContext } from "playwright";
 
+import { DATA_DIR } from "../config/paths.js";
 import { SESSION_FILE } from "../config/urls.js";
 
 export async function saveSession(context: BrowserContext): Promise<void> {
@@ -24,9 +25,8 @@ export function getSessionPath(): string {
 }
 
 export async function clearSession(): Promise<void> {
-  try {
-    await writeFile(SESSION_FILE, "");
-  } catch {
-    // no session file yet
-  }
+  await Promise.all([
+    rm(SESSION_FILE, { force: true }),
+    rm(path.join(DATA_DIR, "beta-token.json"), { force: true }),
+  ]);
 }

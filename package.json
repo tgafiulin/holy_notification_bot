@@ -6,13 +6,15 @@
   "scripts": {
     "login": "tsx src/cli/login-test.ts",
     "login:headed": "tsx src/cli/login-test.ts --headed",
+    "logout": "tsx src/cli/logout.ts",
     "poll": "tsx src/cli/poll-test.ts",
     "bot": "tsx src/cli/bot.ts",
     "bot:dev": "tsx watch src/cli/bot.ts",
     "reminder-once": "tsx src/cli/reminder-once.ts",
     "docker:build": "bash scripts/docker-build-prod.sh",
     "docker:push": "bash scripts/docker-push-prod.sh",
-    "docker:save": "bash scripts/docker-save-prod.sh"
+    "docker:save": "bash scripts/docker-save-prod.sh",
+    "docker:deploy": "bash scripts/docker-deploy-prod.sh"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

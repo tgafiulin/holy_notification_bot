@@ -6,6 +6,7 @@ import {
   VOTER_DM_PARSE_MODE,
 } from "../bot/format-voter-dm-messages.js";
 import type { PendingSummary } from "./fetch-pending-summary.js";
+import { findVoterRecordByMemberId } from "../scraper/committee-members.js";
 import type { VotersRegistry } from "../voters/types.js";
 import type { SpeechFirstSeenMap } from "../stall/speech-first-seen.js";
 import {
@@ -85,11 +86,13 @@ export async function sendVoterNotifications(
   }
 
   for (const voter of summary.byVoter) {
-    const record = registry.get(voter.voterName);
+    const byMemberId = findVoterRecordByMemberId(registry, voter.voterId);
+    const voterName = byMemberId?.jeventName ?? voter.voterName;
+    const record = byMemberId?.record ?? registry.get(voter.voterName);
 
     if (!record?.telegramUserId) {
       result.skipped.push({
-        voterName: voter.voterName,
+        voterName,
         reason: "нет telegramUserId в voters.json",
       });
       continue;
@@ -105,7 +108,7 @@ export async function sendVoterNotifications(
 
     if (stalled.length === 0) {
       result.skipped.push({
-        voterName: voter.voterName,
+        voterName,
         reason: stallFilterActive
           ? STALL_SKIP_REASON
           : "нет заявок для напоминания",
@@ -125,13 +128,13 @@ export async function sendVoterNotifications(
       }
 
       result.sent.push({
-        voterName: voter.voterName,
+        voterName,
         telegramUserId: record.telegramUserId,
         pendingCount: stalled.length,
       });
     } catch (error) {
       result.failed.push({
-        voterName: voter.voterName,
+        voterName,
         telegramUserId: record.telegramUserId,
         error: describeTelegramSendError(error),
       });

@@ -1,46 +1,57 @@
 import type { APIRequestContext } from "playwright";
 
+import type { PaginatedResponse, ProposalDto } from "../api/proposals.js";
 import { JEVENT_URLS } from "../config/urls.js";
-import type { PollingResponse } from "../models/jevent.js";
+import type { Proposal } from "../models/program.js";
+import { fetchCommitteeMembersData } from "./fetch-pcmembers.js";
+import { mapProposals } from "./map-proposals.js";
 
-export type FetchPollingOptions = {
+export type FetchProposalsOptions = {
   eventId: string | number;
-  excludedStatuses?: string[];
-  excludedInternalStatuses?: number[];
+  voterNameByMemberId?: Map<number, string>;
 };
 
-const DEFAULT_BODY = {
-  excludedStatuses: [] as string[],
-  excludedInternalStatuses: [] as number[],
+export type FetchProposalsResult = {
+  proposals: Proposal[];
+  totalProposals: number;
 };
 
-export async function fetchPollingData(
+export async function fetchProposals(
   request: APIRequestContext,
-  options: FetchPollingOptions,
-): Promise<PollingResponse> {
-  const url = JEVENT_URLS.votePolling(options.eventId);
-  const body = {
-    excludedStatuses: options.excludedStatuses ?? DEFAULT_BODY.excludedStatuses,
-    excludedInternalStatuses:
-      options.excludedInternalStatuses ??
-      DEFAULT_BODY.excludedInternalStatuses,
-  };
+  options: FetchProposalsOptions,
+): Promise<FetchProposalsResult> {
+  const url = JEVENT_URLS.proposals(options.eventId);
 
-  const response = await request.post(url, {
-    data: body,
-    headers: {
-      Accept: "*/*",
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
+  const [response, membersData] = await Promise.all([
+    request.get(url, {
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    }),
+    options.voterNameByMemberId
+      ? null
+      : fetchCommitteeMembersData(request, options.eventId),
+  ]);
 
   if (!response.ok()) {
     const text = await response.text();
     throw new Error(
-      `Polling request failed: HTTP ${response.status()} ${text.slice(0, 200)}`,
+      `Proposals request failed: HTTP ${response.status()} ${text.slice(0, 200)}`,
     );
   }
 
-  return (await response.json()) as PollingResponse;
+  const data = (await response.json()) as PaginatedResponse<ProposalDto>;
+  const voterNameByMemberId =
+    options.voterNameByMemberId ??
+    new Map(
+      (membersData?.committeeMembers ?? []).map((member) => [member.id, member.name]),
+    );
+
+  const proposals = mapProposals(data, voterNameByMemberId);
+
+  return {
+    proposals,
+    totalProposals: data.data.length,
+  };
 }

@@ -1,5 +1,5 @@
 import { JEVENT_URLS } from "../config/urls.js";
-import type { PendingVote } from "../models/jevent.js";
+import type { PendingAssignment } from "../models/program.js";
 import type { PendingSummary } from "../services/fetch-pending-summary.js";
 import { escapeHtml } from "../telegram/html.js";
 import { formatPendingItemLine } from "../telegram/pending-line.js";
@@ -44,7 +44,7 @@ export function formatVoterMessageFooter(
 
 export function formatVoterDmMessages(
   summary: PendingSummary,
-  pending: PendingVote[],
+  pending: PendingAssignment[],
   options: FormatVoterDmOptions = {},
 ): string[] {
   const stallFilterActive = options.stallFilterActive ?? false;
