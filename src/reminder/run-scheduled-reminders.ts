@@ -1,7 +1,6 @@
 import type { Api } from "grammy";
 
 import { PENDING_MESSAGE_PARSE_MODE } from "../bot/format-pending-messages.js";
-import { formatVotersSyncNote } from "../voters/format-voters-sync-note.js";
 import { loadVotersRegistry } from "../voters/load-voters.js";
 import { loadStallConfig } from "../config/stall-config.js";
 import { fetchPendingWithSession } from "../services/fetch-pending-with-session.js";
@@ -77,11 +76,6 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
   }
 
   const { summary } = fetchResult;
-
-  const syncNote = formatVotersSyncNote(summary.votersAdded);
-  if (syncNote) {
-    await deps.api.sendMessage(deps.adminUserId, syncNote);
-  }
 
   if (summary.pendingCount === 0) {
     await sendAdmin(

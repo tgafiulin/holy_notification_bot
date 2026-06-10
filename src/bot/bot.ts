@@ -13,7 +13,6 @@ import { sendVoterNotifications } from "../services/send-voter-notifications.js"
 import type { BotConfig } from "./config.js";
 import { bindTelegramUserId } from "../voters/bind-telegram-user-id.js";
 import { isPollViewer } from "../voters/can-user-view-poll.js";
-import { formatVotersSyncNote } from "../voters/format-voters-sync-note.js";
 import {
   loadVotersMap,
   loadVotersRegistry,
@@ -161,10 +160,6 @@ async function handlePollPending(
       return;
     }
 
-    if (isMainAdmin(ctx, adminUserId)) {
-      await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
-    }
-
     const votersMap = await loadVotersMap();
     const messages = formatPendingMessages(fetchResult.summary, votersMap);
 
@@ -203,8 +198,6 @@ async function handleNotifyVoters(ctx: {
       return;
     }
 
-    await replyVotersSyncNote(ctx, fetchResult.summary.votersAdded);
-
     const registry = await loadVotersRegistry();
     const reminderState = await loadReminderState(DEFAULT_EVENT_ID);
     const notifyResult = await sendVoterNotifications(
@@ -225,16 +218,6 @@ async function handleNotifyVoters(ctx: {
       loadingMessage.chat.id,
       loadingMessage.message_id,
     );
-  }
-}
-
-async function replyVotersSyncNote(
-  ctx: { reply: (text: string) => Promise<unknown> },
-  added: string[],
-): Promise<void> {
-  const note = formatVotersSyncNote(added);
-  if (note) {
-    await ctx.reply(note);
   }
 }
 
