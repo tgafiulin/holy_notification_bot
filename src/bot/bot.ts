@@ -52,8 +52,8 @@ export const POLL_CALLBACK_DATA = "poll_pending" as const;
 export const NOTIFY_CALLBACK_DATA = "notify_voters" as const;
 
 const LOGIN_USERNAME_PROMPT =
-  "Сессия jEvent не настроена или истекла.\n\n" +
-  "Отправьте логин (username/email) для входа в jEvent:";
+  "Сессия ЛКО не настроена или истекла.\n\n" +
+  "Отправьте логин (username/email) для входа в ЛКО:";
 
 const LOGIN_PASSWORD_PROMPT =
   "Теперь отправьте пароль.\n" +
@@ -123,7 +123,7 @@ async function replySessionError(
 
   if (viewer) {
     await ctx.reply(
-      "❌ Сессия jEvent не настроена или истекла.\n\n" +
+      "❌ Сессия ЛКО не настроена или истекла.\n\n" +
         "Обратитесь к администратору бота.",
     );
     return;
@@ -146,7 +146,7 @@ async function handlePollPending(
   },
   adminUserId: number,
 ): Promise<void> {
-  const loadingMessage = await ctx.reply("Загружаю данные из jEvent…");
+  const loadingMessage = await ctx.reply("Загружаю данные из ЛКО…");
 
   const fetchResult = await fetchPendingWithSession();
 
@@ -396,7 +396,7 @@ export function createBot(config: BotConfig): Bot {
 
     if (loginResult.status === "ready") {
       await ctx.reply(
-        "✅ Вход в jEvent выполнен. Сессия сохранена.\n\n" +
+        "✅ Вход в ЛКО выполнен. Сессия сохранена.\n\n" +
           "Теперь можно проверять голосования и рассылать напоминания.",
         { reply_markup: createAdminReplyKeyboard() },
       );

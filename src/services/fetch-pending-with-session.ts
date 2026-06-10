@@ -21,7 +21,7 @@ export async function fetchPendingWithSession(
       ok: false,
       kind: "needs_credentials",
       message:
-        "Сессия jEvent не настроена. Укажите JEVENT_USERNAME и JEVENT_PASSWORD в .env или войдите через бота.",
+        "Сессия ЛКО не настроена. Укажите JEVENT_USERNAME и JEVENT_PASSWORD в .env или войдите через бота.",
     };
   }
 
@@ -47,7 +47,7 @@ export async function fetchPendingWithSession(
       return {
         ok: false,
         kind: "needs_credentials",
-        message: "Нет сохранённой сессии jEvent.",
+        message: "Нет сохранённой сессии ЛКО.",
       };
     }
 

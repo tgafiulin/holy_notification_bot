@@ -1,4 +1,4 @@
-/** jEvent serializes Java LocalDateTime as [y, m, d, h, min, s, nano?]. */
+/** ЛКО serializes Java LocalDateTime as [y, m, d, h, min, s, nano?]. */
 export function parseJeventDateTimeArray(value: number[] | null | undefined): Date | null {
   if (value == null || value.length < 3) {
     return null;

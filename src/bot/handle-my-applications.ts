@@ -43,7 +43,7 @@ export async function handleMyApplications(ctx: MyApplicationsContext): Promise<
     return;
   }
 
-  const loadingMessage = await ctx.reply("Загружаю ваши заявки из jEvent…");
+  const loadingMessage = await ctx.reply("Загружаю ваши заявки из ЛКО…");
 
   try {
     const fetchResult = await fetchPendingWithSession();

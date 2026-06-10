@@ -21,8 +21,8 @@ async function promptCredentials(): Promise<{ username: string; password: string
   const rl = createInterface({ input, output });
 
   try {
-    const promptedUsername = await rl.question("jEvent username: ");
-    const promptedPassword = await rl.question("jEvent password: ");
+    const promptedUsername = await rl.question("ЛКО username: ");
+    const promptedPassword = await rl.question("ЛКО password: ");
     return {
       username: promptedUsername.trim(),
       password: promptedPassword,
@@ -35,7 +35,7 @@ async function promptCredentials(): Promise<{ username: string; password: string
 async function main(): Promise<void> {
   const headless = process.argv.includes("--headed") ? false : true;
 
-  console.log("jEvent login test\n");
+  console.log("ЛКО login test\n");
 
   const envCreds = getCredentialsFromEnv();
   const sessionResult = await ensureJeventSession(envCreds ?? undefined, {

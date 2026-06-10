@@ -1,7 +1,7 @@
 {
   "name": "holy_notification_bot",
   "version": "1.0.0",
-  "description": "Telegram bot reminders for jEvent conference talk voting",
+  "description": "Telegram bot reminders for ЛКО conference talk voting",
   "type": "module",
   "scripts": {
     "login": "tsx src/cli/login-test.ts",

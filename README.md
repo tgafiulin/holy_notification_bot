@@ -1,6 +1,6 @@
 # holy_notification_bot
 
-Telegram-бот для напоминаний о голосовании по заявкам докладов в [jEvent CRM](https://jevent.jugru.org).
+Telegram-бот для напоминаний о голосовании по заявкам докладов в [ЛКО](https://jevent.jugru.org).
 
 ## Требования
 
@@ -23,7 +23,7 @@ npm run login
 # Загрузить голоса и вывести pending по голосующим
 npm run poll
 
-# Запустить Telegram-бота (логин jEvent — через бота или .env)
+# Запустить Telegram-бота (логин ЛКО — через бота или .env)
 npm run bot
 
 # То же с автоперезапуском при изменениях в src/
@@ -47,7 +47,7 @@ npm run login:headed
 
 ## Маппинг голосующих
 
-Скопируйте `voters.example.json` → `voters.json` и укажите Telegram username (без `@`) для каждого имени из jEvent. Попросите голосующих написать боту `/start` — `telegramUserId` привяжется автоматически.
+Скопируйте `voters.example.json` → `voters.json` и укажите Telegram username (без `@`) для каждого имени из ЛКО. Попросите голосующих написать боту `/start` — `telegramUserId` привяжется автоматически.
 
 `voters.json` не коммитится в git (персональные данные).
 

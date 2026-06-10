@@ -39,7 +39,7 @@ export function formatVoterMessageFooter(
   summary: Pick<PendingSummary, "eventId">,
 ): string {
   const pollingUrl = JEVENT_URLS.polling(summary.eventId);
-  return `\n\nПожалуйста, проголосуйте в jEvent.\n${pollingUrl}`;
+  return `\n\nПожалуйста, проголосуйте в ЛКО.\n${pollingUrl}`;
 }
 
 export function formatVoterDmMessages(

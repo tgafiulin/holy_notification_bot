@@ -13,7 +13,7 @@ function parseVotersFile(parsed: VotersFile): VotersRegistry {
     }
 
     if (registry.has(name)) {
-      throw new Error(`voters.json: duplicate jEvent name "${name}"`);
+      throw new Error(`voters.json: duplicate ЛКО name "${name}"`);
     }
 
     registry.set(name, parseVoterEntry(rawEntry));

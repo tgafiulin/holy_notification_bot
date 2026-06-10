@@ -12,7 +12,7 @@ export async function readVotersFile(
 
     if (!parsed.voters || typeof parsed.voters !== "object" || Array.isArray(parsed.voters)) {
       throw new Error(
-        'voters.json: expected { "voters": { "Имя из jEvent": "username" | { "username", "telegramUserId" } } }',
+        'voters.json: expected { "voters": { "Имя из ЛКО": "username" | { "username", "telegramUserId" } } }',
       );
     }
 
