@@ -20,7 +20,7 @@ export function collectPending(proposals: Proposal[]): PendingAssignment[] {
         jiraKey: proposal.jiraKey,
         voterId: assignment.voterId,
         voterName: assignment.voterName,
-        statusChangedAt: proposal.statusChangedAt,
+        pendingSince: assignment.pendingSince,
       });
     }
   }

@@ -8,6 +8,7 @@
     "login:headed": "tsx src/cli/login-test.ts --headed",
     "logout": "tsx src/cli/logout.ts",
     "poll": "tsx src/cli/poll-test.ts",
+    "notify-preview": "tsx src/cli/notify-preview.ts",
     "bot": "tsx src/cli/bot.ts",
     "bot:dev": "tsx watch src/cli/bot.ts",
     "reminder-once": "tsx src/cli/reminder-once.ts",

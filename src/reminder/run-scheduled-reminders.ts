@@ -1,11 +1,10 @@
 import type { Api } from "grammy";
 
 import { PENDING_MESSAGE_PARSE_MODE } from "../bot/format-pending-messages.js";
-import { collectPollReportRecipientIds } from "../voters/can-user-view-poll.js";
 import { loadVotersRegistry } from "../voters/load-voters.js";
-import type { VotersRegistry } from "../voters/types.js";
 import { loadStallConfig } from "../config/stall-config.js";
 import { fetchPendingWithSession } from "../services/fetch-pending-with-session.js";
+import { sendPollReports } from "../services/send-poll-reports.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
 import { checkAndNotifyMissedSlots } from "./check-missed-slots.js";
 import {
@@ -24,19 +23,6 @@ export type ScheduledReminderDeps = {
   config: ReminderConfig;
 };
 
-async function sendPollReports(
-  deps: ScheduledReminderDeps,
-  registry: VotersRegistry,
-  text: string,
-  parseMode: typeof HTML_PARSE_MODE | typeof PENDING_MESSAGE_PARSE_MODE = HTML_PARSE_MODE,
-): Promise<void> {
-  const recipients = collectPollReportRecipientIds(deps.adminUserId, registry);
-
-  for (const userId of recipients) {
-    await deps.api.sendMessage(userId, text, { parse_mode: parseMode });
-  }
-}
-
 function markSlotProcessed(state: Awaited<ReturnType<typeof loadReminderState>>, slotId: string): void {
   if (!state.processedSlots.includes(slotId)) {
     state.processedSlots.push(slotId);
@@ -48,7 +34,8 @@ export async function runMissedSlotsCheck(deps: ScheduledReminderDeps): Promise<
   const registry = await loadVotersRegistry();
 
   await checkAndNotifyMissedSlots(deps.config, {
-    sendAdminMessage: (text) => sendPollReports(deps, registry, text),
+    sendAdminMessage: (text) =>
+      sendPollReports(deps.api, deps.adminUserId, registry, text, HTML_PARSE_MODE),
   });
 }
 
@@ -79,9 +66,11 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
           : fetchResult.message;
 
     await sendPollReports(
-      deps,
+      deps.api,
+      deps.adminUserId,
       registry,
       formatScheduledSessionError(activeSlot, deps.config.timezone, message),
+      HTML_PARSE_MODE,
     );
     return;
   }
@@ -90,9 +79,11 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
 
   if (summary.pendingCount === 0) {
     await sendPollReports(
-      deps,
+      deps.api,
+      deps.adminUserId,
       registry,
       formatAllVotedAdminMessage(activeSlot, deps.config.timezone, summary.eventId),
+      HTML_PARSE_MODE,
     );
     markSlotProcessed(state, activeSlot.id);
     await saveReminderState(state);
@@ -114,7 +105,8 @@ export async function runScheduledReminders(deps: ScheduledReminderDeps): Promis
   await saveReminderState(state);
 
   await sendPollReports(
-    deps,
+    deps.api,
+    deps.adminUserId,
     registry,
     formatScheduledNotifyReport(notifyResult, activeSlot, deps.config.timezone),
     PENDING_MESSAGE_PARSE_MODE,

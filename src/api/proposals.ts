@@ -22,6 +22,8 @@ export type ProposalAssignmentDto = {
   kind?: string;
   status?: string;
   finishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ProposalMemberDto = {

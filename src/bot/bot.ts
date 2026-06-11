@@ -9,6 +9,7 @@ import type { PendingSummary } from "../services/fetch-pending-summary.js";
 import { DEFAULT_EVENT_ID } from "../config/constants.js";
 import { loadStallConfig } from "../config/stall-config.js";
 import { loadReminderState } from "../reminder/reminder-state-io.js";
+import { sendPollReports } from "../services/send-poll-reports.js";
 import { sendVoterNotifications } from "../services/send-voter-notifications.js";
 import type { BotConfig } from "./config.js";
 import { bindTelegramUserId } from "../voters/bind-telegram-user-id.js";
@@ -179,10 +180,13 @@ async function isBoundVoter(telegramUserId: number): Promise<boolean> {
   return findVoterNameByTelegramUserId(registry, telegramUserId) != null;
 }
 
-async function handleNotifyVoters(ctx: {
-  reply: (text: string, options?: object) => Promise<{ chat: { id: number }; message_id: number }>;
-  api: Api;
-}): Promise<void> {
+async function handleNotifyVoters(
+  ctx: {
+    reply: (text: string, options?: object) => Promise<{ chat: { id: number }; message_id: number }>;
+    api: Api;
+  },
+  adminUserId: number,
+): Promise<void> {
   const loadingMessage = await ctx.reply("Загружаю данные и рассылаю напоминания…");
 
   const fetchResult = await fetchPendingWithSession();
@@ -210,9 +214,12 @@ async function handleNotifyVoters(ctx: {
       },
     );
 
-    await ctx.reply(formatNotifyReport(notifyResult), {
-      parse_mode: PENDING_MESSAGE_PARSE_MODE,
-    });
+    await sendPollReports(
+      ctx.api,
+      adminUserId,
+      registry,
+      formatNotifyReport(notifyResult),
+    );
   } finally {
     await ctx.api.deleteMessage(
       loadingMessage.chat.id,
@@ -410,7 +417,7 @@ export function createBot(config: BotConfig): Bot {
     if (!isMainAdmin(ctx, config.adminUserId)) {
       return;
     }
-    await handleNotifyVoters(ctx);
+    await handleNotifyVoters(ctx, config.adminUserId);
   });
 
   bot.callbackQuery(POLL_CALLBACK_DATA, async (ctx) => {
@@ -420,7 +427,7 @@ export function createBot(config: BotConfig): Bot {
 
   bot.callbackQuery(NOTIFY_CALLBACK_DATA, async (ctx) => {
     await ctx.answerCallbackQuery();
-    await handleNotifyVoters(ctx);
+    await handleNotifyVoters(ctx, config.adminUserId);
   });
 
   bot.catch((error) => {

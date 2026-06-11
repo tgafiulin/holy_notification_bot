@@ -47,6 +47,77 @@ export type SendVoterNotificationsResult = NotifyVotersResult & {
   speechFirstSeen: SpeechFirstSeenMap;
 };
 
+export type VoterNotificationPlan = {
+  voterName: string;
+  telegramUserId: number;
+  pendingCount: number;
+  messages: string[];
+};
+
+export type PlanVoterNotificationsResult = {
+  planned: VoterNotificationPlan[];
+  skipped: NotifySkipped[];
+  speechFirstSeen: SpeechFirstSeenMap;
+};
+
+export function planVoterNotifications(
+  summary: PendingSummary,
+  registry: VotersRegistry,
+  options: SendVoterNotificationsOptions,
+): PlanVoterNotificationsResult {
+  const planned: VoterNotificationPlan[] = [];
+  const skipped: NotifySkipped[] = [];
+
+  let speechFirstSeen = options.speechFirstSeen;
+  const now = new Date();
+  const stallFilterActive = !isStallThresholdDisabled(options.stallConfig);
+
+  if (summary.byVoter.length === 0) {
+    return { planned, skipped, speechFirstSeen };
+  }
+
+  for (const voter of summary.byVoter) {
+    const byMemberId = findVoterRecordByMemberId(registry, voter.voterId);
+    const voterName = byMemberId?.jeventName ?? voter.voterName;
+    const record = byMemberId?.record ?? registry.get(voter.voterName);
+
+    if (!record?.telegramUserId) {
+      skipped.push({
+        voterName,
+        reason: "нет telegramUserId в voters.json",
+      });
+      continue;
+    }
+
+    const { stalled, firstSeenMap } = filterStalledPending(
+      voter.pending,
+      options.stallConfig,
+      speechFirstSeen,
+      now,
+    );
+    speechFirstSeen = firstSeenMap;
+
+    if (stalled.length === 0) {
+      skipped.push({
+        voterName,
+        reason: stallFilterActive
+          ? STALL_SKIP_REASON
+          : "нет заявок для напоминания",
+      });
+      continue;
+    }
+
+    planned.push({
+      voterName,
+      telegramUserId: record.telegramUserId,
+      pendingCount: stalled.length,
+      messages: formatVoterDmMessages(summary, stalled, { stallFilterActive }),
+    });
+  }
+
+  return { planned, skipped, speechFirstSeen };
+}
+
 function describeTelegramSendError(error: unknown): string {
   if (error && typeof error === "object" && "description" in error) {
     const description = String((error as { description: unknown }).description);
@@ -77,65 +148,30 @@ export async function sendVoterNotifications(
     failed: [],
   };
 
-  let speechFirstSeen = options.speechFirstSeen;
-  const now = new Date();
-  const stallFilterActive = !isStallThresholdDisabled(options.stallConfig);
+  const { planned, skipped, speechFirstSeen } = planVoterNotifications(
+    summary,
+    registry,
+    options,
+  );
+  result.skipped = skipped;
 
-  if (summary.byVoter.length === 0) {
-    return { ...result, speechFirstSeen };
-  }
-
-  for (const voter of summary.byVoter) {
-    const byMemberId = findVoterRecordByMemberId(registry, voter.voterId);
-    const voterName = byMemberId?.jeventName ?? voter.voterName;
-    const record = byMemberId?.record ?? registry.get(voter.voterName);
-
-    if (!record?.telegramUserId) {
-      result.skipped.push({
-        voterName,
-        reason: "нет telegramUserId в voters.json",
-      });
-      continue;
-    }
-
-    const { stalled, firstSeenMap } = filterStalledPending(
-      voter.pending,
-      options.stallConfig,
-      speechFirstSeen,
-      now,
-    );
-    speechFirstSeen = firstSeenMap;
-
-    if (stalled.length === 0) {
-      result.skipped.push({
-        voterName,
-        reason: stallFilterActive
-          ? STALL_SKIP_REASON
-          : "нет заявок для напоминания",
-      });
-      continue;
-    }
-
-    const messages = formatVoterDmMessages(summary, stalled, {
-      stallFilterActive,
-    });
-
+  for (const item of planned) {
     try {
-      for (const text of messages) {
-        await api.sendMessage(record.telegramUserId, text, {
+      for (const text of item.messages) {
+        await api.sendMessage(item.telegramUserId, text, {
           parse_mode: VOTER_DM_PARSE_MODE,
         });
       }
 
       result.sent.push({
-        voterName,
-        telegramUserId: record.telegramUserId,
-        pendingCount: stalled.length,
+        voterName: item.voterName,
+        telegramUserId: item.telegramUserId,
+        pendingCount: item.pendingCount,
       });
     } catch (error) {
       result.failed.push({
-        voterName,
-        telegramUserId: record.telegramUserId,
+        voterName: item.voterName,
+        telegramUserId: item.telegramUserId,
         error: describeTelegramSendError(error),
       });
     }

@@ -10,6 +10,7 @@ import {
   VOTING_ASSIGNMENT_KIND,
 } from "../config/constants.js";
 import type { Proposal, VoterAssignment } from "../models/program.js";
+import { parseApiDateTime } from "./parse-api-datetime.js";
 
 const COMPLETE_ASSIGNMENT_STATUS = "DONE";
 const PENDING_ASSIGNMENT_STATUS = "ACTIVE";
@@ -26,28 +27,6 @@ function localizedName(value: LocalizedField): string {
   return (value.ru ?? value.en ?? "").trim();
 }
 
-function parseIsoDateTime(iso: string | null | undefined): string | null {
-  if (!iso) {
-    return null;
-  }
-
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toISOString();
-}
-
-function getStatusChangedAt(workflow: ProposalDto["workflow"]): string | null {
-  const history = workflow?.statusHistory;
-  if (!history?.length) {
-    return null;
-  }
-
-  return parseIsoDateTime(history[history.length - 1]?.createdAt);
-}
-
 function getSpeakerNames(members: ProposalMemberDto[] | undefined): string {
   const speakers = (members ?? [])
     .filter((member) => member.role === "SPEAKER")
@@ -60,6 +39,10 @@ function getSpeakerNames(members: ProposalMemberDto[] | undefined): string {
     .filter(Boolean);
 
   return speakers.length > 0 ? speakers.join(", ") : "—";
+}
+
+function getPendingSince(assignment: ProposalAssignmentDto): string | null {
+  return parseApiDateTime(assignment.updatedAt ?? assignment.createdAt);
 }
 
 function mapAssignment(
@@ -83,7 +66,8 @@ function mapAssignment(
     voterName,
     canVote: true,
     pending: isPending,
-    completedAt: isPending ? null : parseIsoDateTime(assignment.finishedAt),
+    pendingSince: isPending ? getPendingSince(assignment) : null,
+    completedAt: isPending ? null : parseApiDateTime(assignment.finishedAt),
   };
 }
 
@@ -123,7 +107,6 @@ function mapProposal(
     jiraKey: workflow?.task ?? "",
     jiraStatus: workflow?.statusHint ?? workflow?.status ?? "",
     speakers: getSpeakerNames(proposal.members),
-    statusChangedAt: getStatusChangedAt(workflow),
     assignments,
   };
 }

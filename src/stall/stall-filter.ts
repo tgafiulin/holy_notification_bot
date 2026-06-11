@@ -44,7 +44,7 @@ export function filterStalledPending(
   const stalled: PendingAssignment[] = [];
 
   for (const item of pending) {
-    if (item.statusChangedAt == null) {
+    if (item.pendingSince == null) {
       map = ensureSpeechFirstSeen(map, item.proposalId, now);
     }
 

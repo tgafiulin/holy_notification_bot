@@ -20,12 +20,12 @@ export function ensureSpeechFirstSeen(
 }
 
 export function resolveInReviewSince(
-  item: Pick<PendingAssignment, "proposalId" | "statusChangedAt">,
+  item: Pick<PendingAssignment, "proposalId" | "pendingSince">,
   firstSeenMap: SpeechFirstSeenMap,
   now: Date,
 ): Date | null {
-  if (item.statusChangedAt) {
-    const fromApi = new Date(item.statusChangedAt);
+  if (item.pendingSince) {
+    const fromApi = new Date(item.pendingSince);
     if (!Number.isNaN(fromApi.getTime())) {
       return fromApi;
     }

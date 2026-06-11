@@ -11,6 +11,8 @@ export type VoterAssignment = {
   voterName: string;
   canVote: boolean;
   pending: boolean;
+  /** Когда назначение стало ACTIVE (для расчёта застоя). */
+  pendingSince: string | null;
   completedAt: string | null;
 };
 
@@ -20,7 +22,6 @@ export type Proposal = {
   jiraKey: string;
   jiraStatus: string;
   speakers: string;
-  statusChangedAt: string | null;
   assignments: VoterAssignment[];
 };
 
@@ -31,7 +32,8 @@ export type PendingAssignment = {
   jiraKey: string;
   voterId: number;
   voterName: string;
-  statusChangedAt: string | null;
+  /** С какой даты ждём голос (assignment.updatedAt для ACTIVE). */
+  pendingSince: string | null;
 };
 
 export type VoterPendingSummary = {
